@@ -1,415 +1,293 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>88 — Onlineshop</title>
-  <meta name="description" content="Onlineshop '88' — Demo mit Produktübersicht, Suche, Warenkorb und responsive Layout" />
-  <style>
-    /* --------------------
-       Basis / Variablen
-       -------------------- */
-    :root{
-      --bg:#f6f7fb;
-      --card:#ffffff;
-      --muted:#6b7280;
-      --accent:#111827; /* dunkel */
-      --accent-2:#ef4444; /* rot als akzent */
-      --radius:12px;
-      --shadow: 0 8px 20px rgba(16,24,40,0.08);
-      --glass: rgba(255,255,255,0.6);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-      background:linear-gradient(180deg, var(--bg), #eef2ff 200px);
-      color:var(--accent);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      line-height:1.35;
-      padding:24px;
-    }
+<meta charset="UTF-8">
+<title>Delay.Filme & Serien</title>
 
-    /* --------------------
-       Layout
-       -------------------- */
-    .container{max-width:1100px;margin:0 auto}
+<style>
+:root{
+    --bg:#0a0614;
+    --card:#140c26;
+    --purple:#b56bff;
+    --glow:#7a2cff;
+}
 
-    header{
-      display:flex;align-items:center;gap:16px;justify-content:space-between;margin-bottom:18px;
-    }
-    .brand{display:flex;align-items:center;gap:12px}
-    .logo{
-      width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#111827,#4f46e5);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;box-shadow:var(--shadow)
-    }
-    .brand h1{margin:0;font-size:18px}
-    nav{display:flex;gap:12px;align-items:center}
+body{
+    margin:0;
+    background:var(--bg);
+    color:#eee;
+    font-family:Arial, sans-serif;
+}
 
-    /* search */
-    .search-wrap{display:flex;align-items:center;gap:8px;background:var(--card);padding:8px;border-radius:12px;box-shadow:var(--shadow)}
-    .search-wrap input{border:0;outline:0;background:transparent;padding:6px 8px;width:220px}
-    .search-wrap button{background:transparent;border:0;cursor:pointer;padding:6px}
+/* HEADER */
+header{
+    padding:25px;
+    font-size:32px;
+    font-weight:bold;
+    color:var(--purple);
+    letter-spacing:1px;
+}
 
-    /* cart button */
-    .cart-btn{position:relative;background:transparent;border:0;cursor:pointer;padding:8px;border-radius:10px}
-    .cart-count{position:absolute;top:-6px;right:-6px;background:var(--accent-2);color:white;border-radius:999px;padding:3px 6px;font-size:12px}
+/* SEARCH */
+input{
+    width:calc(100% - 50px);
+    margin:0 25px 25px;
+    padding:14px;
+    font-size:16px;
+    border-radius:8px;
+    border:none;
+    background:#1a1033;
+    color:white;
+    outline:none;
+}
 
-    /* hero */
-    .hero{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.5));padding:18px;border-radius:14px;margin-bottom:18px;box-shadow:var(--shadow)}
-    .hero .left{max-width:68%}
-    .hero h2{margin:0 0 8px 0;font-size:20px}
-    .hero p{margin:0;color:var(--muted)}
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:18px;
+    padding:0 25px 50px;
+}
 
-    /* content */
-    .controls{display:flex;gap:12px;align-items:center;margin:14px 0}
-    select,input[type=range]{padding:8px;border-radius:10px;border:1px solid #e6e9ef}
+/* CARD */
+.card{
+    position:relative;
+    background:var(--card);
+    border-radius:10px;
+    overflow:hidden;
+    cursor:pointer;
+    transform:scale(1);
+    transition:transform .3s ease, box-shadow .3s ease;
+}
 
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column}
-    .thumb{height:160px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e9e9ff,#fff);margin-bottom:10px}
-    .thumb svg{width:60%;height:60%;opacity:0.7}
-    .title{font-weight:600;margin-bottom:6px}
-    .desc{color:var(--muted);font-size:13px;margin-bottom:8px}
-    .price-row{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
-    .price{font-weight:700}
-    .add-btn{background:#111827;color:white;border:0;padding:8px 10px;border-radius:10px;cursor:pointer}
+.card:hover{
+    transform:scale(1.12);
+    box-shadow:0 0 25px var(--glow);
+    z-index:10;
+}
 
-    /* cart drawer */
-    .cart-drawer{position:fixed;right:18px;top:18px;width:360px;max-width:calc(100% - 36px);background:var(--card);border-radius:12px;box-shadow:0 20px 50px rgba(2,6,23,0.25);padding:14px;transform:translateX(120%);transition:transform .28s ease;z-index:60}
-    .cart-drawer.open{transform:translateX(0)}
-    .cart-drawer h3{margin:0 0 8px}
-    .cart-list{max-height:350px;overflow:auto;margin:10px 0;display:flex;flex-direction:column;gap:8px}
-    .cart-item{display:flex;gap:10px;align-items:center}
-    .cart-item .mini{width:56px;height:56px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center}
-    .qty{display:flex;gap:6px;align-items:center}
-    .qty button{padding:6px;border-radius:6px;border:1px solid #e6e9ef;background:transparent;cursor:pointer}
+.card img{
+    width:100%;
+    display:block;
+}
 
-    /* footer */
-    footer{margin-top:26px;padding-top:14px;border-top:1px solid #eceff7;color:var(--muted);font-size:13px}
+.card::after{
+    content:"▶ Abspielen";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to top, rgba(0,0,0,.9), transparent);
+    color:white;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:15px;
+    opacity:0;
+    transition:opacity .3s ease;
+    font-size:14px;
+}
 
-    /* small screens */
-    @media (max-width:900px){
-      .grid{grid-template-columns:repeat(2,1fr)}
-      .hero .left{max-width:100%}
-    }
-    @media (max-width:560px){
-      body{padding:14px}
-      .grid{grid-template-columns:1fr}
-      .search-wrap input{width:120px}
-      header{flex-direction:column;align-items:flex-start;gap:10px}
-      .hero{flex-direction:column;gap:10px}
-      .cart-drawer{right:8px;left:8px;width:auto}
-    }
+.card:hover::after{
+    opacity:1;
+}
 
-    /* small utilities */
-    .muted{color:var(--muted)}
-    .btn-ghost{background:transparent;border:1px solid #e6e9ef;padding:8px;border-radius:10px;cursor:pointer}
-  </style>
+.card p{
+    margin:0;
+    padding:10px;
+    text-align:center;
+    font-size:14px;
+}
+
+/* PLAYER */
+#player{
+    position:fixed;
+    inset:0;
+    background:black;
+    display:none;
+    z-index:1000;
+}
+
+#player video{
+    width:100%;
+    height:100%;
+}
+
+#close{
+    position:absolute;
+    top:20px;
+    right:30px;
+    font-size:32px;
+    color:var(--purple);
+    cursor:pointer;
+    z-index:1001;
+}
+#close:hover{
+    text-shadow:0 0 10px var(--purple);
+}
+
+/* BACK BUTTON für Grid */
+#back{
+    position:absolute;
+    top:20px;
+    right:80px; /* rechts oben neben Close */
+    font-size:24px;
+    color:var(--purple);
+    cursor:pointer;
+    z-index:1001;
+    display:none; /* standardmäßig unsichtbar */
+}
+#back:hover{
+    text-shadow:0 0 10px var(--purple);
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <header>
-      <div class="brand">
-        <div class="logo">88</div>
-        <div>
-          <h1>88</h1>
-          <div class="muted" style="font-size:13px">Kompakter Demo-Shop</div>
-        </div>
-      </div>
 
-      <nav>
-        <div class="search-wrap" role="search">
-          <button aria-hidden="true">🔍</button>
-          <input id="q" placeholder="Suchen... z.B. 'T-Shirt'" aria-label="Produktsuche" />
-          <button id="clear-search" title="Suche löschen">✖</button>
-        </div>
+<header>🎬 Delay.Filme & Serien</header>
 
-        <div class="controls">
-          <select id="sort">
-            <option value="relevance">Sortierung: Relevanz</option>
-            <option value="price-asc">Preis: aufsteigend</option>
-            <option value="price-desc">Preis: absteigend</option>
-          </select>
-          <button class="cart-btn" id="open-cart" aria-haspopup="dialog" aria-controls="cart">🛒 <span class="cart-count" id="cart-count">0</span></button>
-        </div>
-      </nav>
-    </header>
+<input type="text" placeholder="Suchen..." id="search">
 
-    <main>
-      <section class="hero">
-        <div class="left">
-          <h2>Willkommen im Shop 88</h2>
-          <p class="muted">Kleine Demo: Produkte durchsuchen, in den Warenkorb legen und einfache Checkout-Simulation. Alles client-seitig, keine Serververbindung.</p>
-        </div>
-        <div>
-          <button class="btn-ghost" id="reset-catalog">Zurücksetzen</button>
-        </div>
-      </section>
+<div id="back">◀ Zurück</div>
 
-      <div class="controls">
-        <label class="muted">Filter: </label>
-        <input id="minPrice" type="number" placeholder="min Preis" style="width:110px" />
-        <input id="maxPrice" type="number" placeholder="max Preis" style="width:110px" />
-        <button class="btn-ghost" id="apply-filter">Anwenden</button>
-      </div>
+<div class="grid" id="movies"></div>
 
-      <section id="product-grid" class="grid" aria-live="polite">
-        <!-- Produkte werden per JS gerendert -->
-      </section>
+<div id="player">
+    <div id="close">✖</div>
+    <video id="video" controls autoplay></video>
+</div>
 
-    </main>
+<script>
+// Filme
+const movies = [
+    { name: "Zoomania 2", cover: "Zoomania 2.jpg" },
+    { name: "Zoomania", cover: "Zoomania.jpg" },
+    { name: "Five Nights at Freddy's 2", cover: "Five Nights at Freddy's 2.jpg" },
+    { name: "Fack ju Göhte", cover: "Fack ju Göhte.jpg" },
+    { name: "Fack ju Göhte 2", cover: "Fack ju Göhte 2.jpg" },
+    { name: "Fack ju Göhte 3", cover: "Fack ju Göhte 3.jpg" },
+    { name: "Jurassic World Die Wiedergeburt", cover: "Jurassic World Die Wiedergeburt.jpg" },
+    { name: "Jurassic World Das gefallene Königreich", cover: "Jurassic World Das gefallene Königreich.jpg" },
+    { name: "Jurassic World", cover: "Jurassic World.jpg" },
+];
 
-    <footer>
-      <div>© 88 — Demo-Shop. Keine echten Transaktionen. Entwicklungsversion.</div>
-    </footer>
-  </div>
-
-  <!-- Warenkorb Drawer -->
-  <aside id="cart" class="cart-drawer" role="dialog" aria-modal="false" aria-label="Warenkorb">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h3>Warenkorb</h3>
-      <div>
-        <button class="btn-ghost" id="empty-cart">Leeren</button>
-        <button class="btn-ghost" id="close-cart">Schließen</button>
-      </div>
-    </div>
-    <div class="cart-list" id="cart-list">
-      <!-- items -->
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
-      <div>
-        <div class="muted">Zwischensumme</div>
-        <div id="subtotal" style="font-weight:700">0,00 €</div>
-      </div>
-      <div>
-        <button class="add-btn" id="checkout">Zur Kasse</button>
-      </div>
-    </div>
-  </aside>
-
-  <script>
-    // --------------------
-    // Einfacher client-side Shop (Demo)
-    // - Produkte im Array
-    // - Render Grid
-    // - Suche, Filter, Sort
-    // - Warenkorb in memory + localStorage
-    // --------------------
-
-    const PRODUCTS = [
-      {id:1,title:'Classic T-Shirt',desc:'Weiches Baumwollshirt',price:19.9,stock:12},
-      {id:2,title:'Sneaker Lite',desc:'Bequeme Alltags-Sneaker',price:59.0,stock:8},
-      {id:3,title:'Slim Jeans',desc:'Elastische Denim-Jeans',price:49.5,stock:6},
-      {id:4,title:'Cap 88',desc:'Stylische Cap mit Logo',price:14.0,stock:20},
-      {id:5,title:'Hoodie Cozy',desc:'Kapuzenpullover, warm',price:39.9,stock:5},
-      {id:6,title:'Socken (3er)',desc:'Paar Socken, Größe M-L',price:8.5,stock:50},
-      {id:7,title:'Rucksack Urban',desc:'Robuster Tagesrucksack',price:69.9,stock:4},
-      {id:8,title:'Smartwatch X',desc:'Tracking & Benachrichtigungen',price:129.0,stock:3},
-      {id:9,title:'Sonnenbrille',desc:'UV400, polarisiert',price:24.5,stock:15}
-    ];
-
-    // state
-    let catalog = [...PRODUCTS];
-    let cart = JSON.parse(localStorage.getItem('cart88') || '{}'); // {id:qty}
-
-    // utilities
-    const fmt = n => n.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
-
-    // DOM
-    const grid = document.getElementById('product-grid');
-    const q = document.getElementById('q');
-    const clearSearch = document.getElementById('clear-search');
-    const sortSel = document.getElementById('sort');
-    const cartCount = document.getElementById('cart-count');
-    const openCart = document.getElementById('open-cart');
-    const cartDrawer = document.getElementById('cart');
-    const cartList = document.getElementById('cart-list');
-    const subtotalEl = document.getElementById('subtotal');
-    const closeCart = document.getElementById('close-cart');
-    const emptyCartBtn = document.getElementById('empty-cart');
-    const checkoutBtn = document.getElementById('checkout');
-    const resetCatalogBtn = document.getElementById('reset-catalog');
-    const applyFilterBtn = document.getElementById('apply-filter');
-
-    function saveCart(){
-      localStorage.setItem('cart88', JSON.stringify(cart));
+// Serien
+const series = [
+    {
+        name: "IT Welcome to Derry",
+        seasons: [
+            {
+                season: 1,
+                episodes: [
+                    { name: "Episode 1", cover: "IT Welcome to Derry Staffel 1 Episode 1.jpg" },
+                    { name: "Episode 2", cover: "Stranger Things Staffel 1 Episode 2.jpg" },
+                    { name: "Episode 3", cover: "Stranger Things Staffel 1 Episode 3.jpg" }
+                ]
+            },
+        ]
     }
-    function updateCartCount(){
-      const count = Object.values(cart).reduce((s,n)=>s+n,0);
-      cartCount.textContent = count;
-    }
-    function calcSubtotal(){
-      const sum = Object.entries(cart).reduce((s,[id,q])=>{
-        const p = PRODUCTS.find(x=>x.id==id)?.price||0; return s + p * q
-      },0);
-      subtotalEl.textContent = fmt(sum);
-      return sum;
-    }
+];
 
-    function renderProducts(list){
-      grid.innerHTML = '';
-      if(list.length===0){
-        grid.innerHTML = '<div class="muted">Keine Produkte gefunden.</div>';
-        return;
-      }
-      list.forEach(p=>{
-        const card = document.createElement('article');
-        card.className='card';
-        card.innerHTML = `
-          <div class="thumb" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="3"/>
-              <path d="M7 14l3-3 5 5" />
-            </svg>
-          </div>
-          <div class="title">${escapeHtml(p.title)}</div>
-          <div class="desc">${escapeHtml(p.desc)}</div>
-          <div class="price-row">
-            <div class="price">${fmt(p.price)}</div>
-            <div>
-              <button class="add-btn" data-id="${p.id}">In den Warenkorb</button>
-            </div>
-          </div>
-        `;
+const grid = document.getElementById("movies");
+const search = document.getElementById("search");
+const player = document.getElementById("player");
+const video = document.getElementById("video");
+const backBtn = document.getElementById("back");
+
+let currentSeries = null;
+let currentSeason = null;
+let currentView = "main"; // "main", "seasons", "episodes"
+
+// Grid rendern
+function render(filter=""){
+    grid.innerHTML="";
+    currentSeries = null;
+    currentSeason = null;
+    currentView = "main";
+    backBtn.style.display = "none";
+
+    movies.filter(m => m.name.toLowerCase().includes(filter)).forEach(m => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
+        card.onclick = () => playMovie(m.name);
         grid.appendChild(card);
-      });
-
-      // attach add handlers
-      grid.querySelectorAll('.add-btn').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const id = btn.getAttribute('data-id');
-          addToCart(id,1);
-        });
-      });
-    }
-
-    function escapeHtml(s){
-      return String(s).replace(/[&<>"']/g, c=>({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      }[c]));
-    }
-
-    function addToCart(id,qty=1){
-      id = String(id);
-      const prod = PRODUCTS.find(p=>String(p.id)===id);
-      if(!prod){alert('Produkt nicht gefunden');return}
-      const current = cart[id] || 0;
-      if(current + qty > prod.stock){
-        alert('Nicht genügend Lagerbestand');
-        return;
-      }
-      cart[id] = current + qty;
-      saveCart();
-      updateCartCount();
-      renderCart();
-    }
-
-    function renderCart(){
-      cartList.innerHTML='';
-      if(Object.keys(cart).length===0){
-        cartList.innerHTML = '<div class="muted">Warenkorb ist leer.</div>';
-        calcSubtotal();
-        return;
-      }
-      Object.entries(cart).forEach(([id,qty])=>{
-        const p = PRODUCTS.find(x=>String(x.id)===id);
-        if(!p) return;
-        const item = document.createElement('div');
-        item.className='cart-item';
-        item.innerHTML = `
-          <div class="mini">${escapeHtml(p.title.split(' ')[0])}</div>
-          <div style="flex:1">
-            <div style="font-weight:600">${escapeHtml(p.title)}</div>
-            <div class="muted" style="font-size:13px">${fmt(p.price)} × ${qty} = ${fmt(p.price*qty)}</div>
-          </div>
-          <div class="qty">
-            <button data-id="${id}" data-op="dec">−</button>
-            <div aria-live="polite">${qty}</div>
-            <button data-id="${id}" data-op="inc">+</button>
-          </div>
-        `;
-        cartList.appendChild(item);
-      });
-
-      // attach qty handlers
-      cartList.querySelectorAll('button[data-op]').forEach(b=>{
-        b.addEventListener('click', ()=>{
-          const id = b.getAttribute('data-id');
-          const op = b.getAttribute('data-op');
-          if(op==='inc') addToCart(id,1);
-          else changeQty(id, -1);
-        });
-      });
-
-      calcSubtotal();
-    }
-
-    function changeQty(id, delta){
-      id = String(id);
-      if(!cart[id]) return;
-      cart[id] = cart[id] + delta;
-      if(cart[id] <= 0) delete cart[id];
-      saveCart();
-      updateCartCount();
-      renderCart();
-    }
-
-    // search / filter / sort
-    function applyFilters(){
-      const term = q.value.trim().toLowerCase();
-      const min = parseFloat(document.getElementById('minPrice').value) || 0;
-      const max = parseFloat(document.getElementById('maxPrice').value) || Infinity;
-      let list = PRODUCTS.filter(p=>{
-        const matchesTerm = term === '' || (p.title + ' ' + p.desc).toLowerCase().includes(term);
-        const matchesPrice = p.price >= min && p.price <= max;
-        return matchesTerm && matchesPrice;
-      });
-
-      const sort = sortSel.value;
-      if(sort==='price-asc') list.sort((a,b)=>a.price-b.price);
-      if(sort==='price-desc') list.sort((a,b)=>b.price-a.price);
-
-      renderProducts(list);
-    }
-
-    // init
-    (function init(){
-      // render full catalog
-      renderProducts(catalog);
-      updateCartCount();
-      renderCart();
-
-      // handlers
-      q.addEventListener('input', ()=>{ applyFilters(); });
-      clearSearch.addEventListener('click', ()=>{ q.value=''; applyFilters(); });
-      sortSel.addEventListener('change', applyFilters);
-      document.getElementById('apply-filter').addEventListener('click', applyFilters);
-      resetCatalogBtn.addEventListener('click', ()=>{ q.value=''; document.getElementById('minPrice').value=''; document.getElementById('maxPrice').value=''; sortSel.value='relevance'; applyFilters(); });
-
-      openCart.addEventListener('click', ()=>{ cartDrawer.classList.add('open'); cartDrawer.setAttribute('aria-modal','true'); });
-      closeCart.addEventListener('click', ()=>{ cartDrawer.classList.remove('open'); cartDrawer.setAttribute('aria-modal','false'); });
-
-      emptyCartBtn.addEventListener('click', ()=>{ if(confirm('Warenkorb leeren?')){ cart = {}; saveCart(); updateCartCount(); renderCart(); } });
-
-      checkoutBtn.addEventListener('click', ()=>{
-        if(Object.keys(cart).length===0){ alert('Warenkorb ist leer'); return; }
-        const total = calcSubtotal();
-        // Demo: kein echter Checkout
-        alert('Checkout‑Simulation. Gesamt: ' + fmt(total) + "\n\nDanke für deine Bestellung (Demo).\nKeine echte Zahlung wurde durchgeführt.");
-        // clear
-        cart = {}; saveCart(); updateCartCount(); renderCart(); cartDrawer.classList.remove('open');
-      });
-
-    })();
-
-    // small safety helpers
-    // prevent accidental form submit when pressing enter in search
-    document.addEventListener('keydown', (e)=>{
-      if(e.key==='Enter' && document.activeElement === q){ e.preventDefault(); applyFilters(); }
     });
 
-  </script>
+    series.filter(s => s.name.toLowerCase().includes(filter)).forEach(s => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<img src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
+        card.onclick = () => showSeasons(s);
+        grid.appendChild(card);
+    });
+}
+
+// Filme abspielen
+function playMovie(name){
+    video.src = `files/movies/${name}.mp4`;
+    player.style.display = "block";
+    backBtn.style.display = "none"; // kein Back-Button beim Film
+    video.play();
+}
+
+// Serien: Staffeln anzeigen
+function showSeasons(seriesObj){
+    currentSeries = seriesObj;
+    currentSeason = null;
+    currentView = "seasons";
+    grid.innerHTML = "";
+    backBtn.style.display = "block";
+
+    seriesObj.seasons.forEach(season => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<img src="files/covers/${season.episodes[0].cover}"><p>${seriesObj.name} - Staffel ${season.season}</p>`;
+        card.onclick = () => showEpisodes(season);
+        grid.appendChild(card);
+    });
+}
+
+// Episoden anzeigen
+function showEpisodes(season){
+    currentSeason = season;
+    currentView = "episodes";
+    grid.innerHTML = "";
+    backBtn.style.display = "block";
+
+    season.episodes.forEach(ep => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<img src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
+        card.onclick = () => playEpisode(currentSeries.name, season.season, ep.name);
+        grid.appendChild(card);
+    });
+}
+
+// Episode abspielen
+function playEpisode(seriesName, seasonNum, episode){
+    video.src = `files/series/${seriesName} Staffel ${seasonNum} ${episode}.mp4`;
+    player.style.display = "block";
+    backBtn.style.display = "none"; // kein Back-Button beim Video
+    video.play();
+}
+
+// Player schließen
+document.getElementById("close").onclick = () => {
+    video.pause();
+    video.src = "";
+    player.style.display = "none";
+    if(currentView === "seasons" || currentView === "episodes") backBtn.style.display = "block";
+};
+
+// Grid-Zurück-Button
+backBtn.onclick = () => {
+    if(currentView === "episodes") showSeasons(currentSeries);
+    else if(currentView === "seasons") render(search.value.toLowerCase());
+};
+
+search.oninput = e => render(e.target.value.toLowerCase());
+render();
+</script>
+
 </body>
 </html>
