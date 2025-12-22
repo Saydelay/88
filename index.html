@@ -11,24 +11,18 @@
     --purple:#b56bff;
     --glow:#7a2cff;
 }
-
 body{
     margin:0;
     background:var(--bg);
     color:#eee;
     font-family:Arial, sans-serif;
 }
-
-/* HEADER */
 header{
     padding:25px;
     font-size:32px;
     font-weight:bold;
     color:var(--purple);
-    letter-spacing:1px;
 }
-
-/* SEARCH */
 input{
     width:calc(100% - 50px);
     margin:0 25px 25px;
@@ -38,66 +32,31 @@ input{
     border:none;
     background:#1a1033;
     color:white;
-    outline:none;
 }
-
-/* GRID */
 .grid{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
     gap:18px;
     padding:0 25px 50px;
 }
-
-/* CARD */
 .card{
-    position:relative;
     background:var(--card);
     border-radius:10px;
     overflow:hidden;
     cursor:pointer;
-    transform:scale(1);
-    transition:transform .3s ease, box-shadow .3s ease;
+    transition:.3s;
 }
-
 .card:hover{
     transform:scale(1.12);
     box-shadow:0 0 25px var(--glow);
     z-index:10;
 }
-
-.card img{
-    width:100%;
-    display:block;
-}
-
-.card::after{
-    content:"▶ Abspielen";
-    position:absolute;
-    inset:0;
-    background:linear-gradient(to top, rgba(0,0,0,.9), transparent);
-    color:white;
-    display:flex;
-    align-items:flex-end;
-    justify-content:center;
-    padding-bottom:15px;
-    opacity:0;
-    transition:opacity .3s ease;
-    font-size:14px;
-}
-
-.card:hover::after{
-    opacity:1;
-}
-
+.card img{ width:100%; }
 .card p{
     margin:0;
     padding:10px;
     text-align:center;
-    font-size:14px;
 }
-
-/* PLAYER */
 #player{
     position:fixed;
     inset:0;
@@ -105,12 +64,10 @@ input{
     display:none;
     z-index:1000;
 }
-
 #player video{
     width:100%;
     height:100%;
 }
-
 #close{
     position:absolute;
     top:20px;
@@ -118,25 +75,15 @@ input{
     font-size:32px;
     color:var(--purple);
     cursor:pointer;
-    z-index:1001;
 }
-#close:hover{
-    text-shadow:0 0 10px var(--purple);
-}
-
-/* BACK BUTTON für Grid */
 #back{
     position:absolute;
     top:20px;
-    right:80px; /* rechts oben neben Close */
+    right:80px;
     font-size:24px;
     color:var(--purple);
     cursor:pointer;
-    z-index:1001;
-    display:none; /* standardmäßig unsichtbar */
-}
-#back:hover{
-    text-shadow:0 0 10px var(--purple);
+    display:none;
 }
 </style>
 </head>
@@ -144,11 +91,8 @@ input{
 <body>
 
 <header>🎬 Delay.Filme & Serien</header>
-
 <input type="text" placeholder="Suchen..." id="search">
-
 <div id="back">◀ Zurück</div>
-
 <div class="grid" id="movies"></div>
 
 <div id="player">
@@ -157,20 +101,21 @@ input{
 </div>
 
 <script>
-// Filme
+// ================== FILME ==================
 const movies = [
-    { name: "Zoomania 2", cover: "Zoomania 2.jpg" },
-    { name: "Zoomania", cover: "Zoomania.jpg" },
-    { name: "Five Nights at Freddy's 2", cover: "Five Nights at Freddy's 2.jpg" },
-    { name: "Fack ju Göhte", cover: "Fack ju Göhte.jpg" },
-    { name: "Fack ju Göhte 2", cover: "Fack ju Göhte 2.jpg" },
-    { name: "Fack ju Göhte 3", cover: "Fack ju Göhte 3.jpg" },
-    { name: "Jurassic World Die Wiedergeburt", cover: "Jurassic World Die Wiedergeburt.jpg" },
-    { name: "Jurassic World Das gefallene Königreich", cover: "Jurassic World Das gefallene Königreich.jpg" },
-    { name: "Jurassic World", cover: "Jurassic World.jpg" },
+    {
+        name: "Zoomania",
+        cover: "Zoomania.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Zoomania 2",
+        cover: "Zoomania 2.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    }
 ];
 
-// Serien
+// ================== SERIEN ==================
 const series = [
     {
         name: "IT Welcome to Derry",
@@ -178,15 +123,23 @@ const series = [
             {
                 season: 1,
                 episodes: [
-                    { name: "Episode 1", cover: "IT Welcome to Derry Staffel 1 Episode 1.jpg" },
-                    { name: "Episode 2", cover: "Stranger Things Staffel 1 Episode 2.jpg" },
-                    { name: "Episode 3", cover: "Stranger Things Staffel 1 Episode 3.jpg" }
+                    {
+                        name: "Episode 1",
+                        cover: "IT Welcome to Derry Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 2",
+                        cover: "IT Welcome to Derry Staffel 1 Episode 2.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    }
                 ]
-            },
+            }
         ]
     }
 ];
 
+// ================== LOGIK ==================
 const grid = document.getElementById("movies");
 const search = document.getElementById("search");
 const player = document.getElementById("player");
@@ -194,98 +147,74 @@ const video = document.getElementById("video");
 const backBtn = document.getElementById("back");
 
 let currentSeries = null;
-let currentSeason = null;
-let currentView = "main"; // "main", "seasons", "episodes"
+let currentView = "main";
 
-// Grid rendern
 function render(filter=""){
     grid.innerHTML="";
-    currentSeries = null;
-    currentSeason = null;
-    currentView = "main";
-    backBtn.style.display = "none";
+    backBtn.style.display="none";
+    currentView="main";
 
-    movies.filter(m => m.name.toLowerCase().includes(filter)).forEach(m => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
-        card.onclick = () => playMovie(m.name);
-        grid.appendChild(card);
+    movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
+        c.onclick=()=>play(m.link);
+        grid.appendChild(c);
     });
 
-    series.filter(s => s.name.toLowerCase().includes(filter)).forEach(s => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `<img src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
-        card.onclick = () => showSeasons(s);
-        grid.appendChild(card);
+    series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<img src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
+        c.onclick=()=>showSeasons(s);
+        grid.appendChild(c);
     });
 }
 
-// Filme abspielen
-function playMovie(name){
-    video.src = `files/movies/${name}.mp4`;
-    player.style.display = "block";
-    backBtn.style.display = "none"; // kein Back-Button beim Film
+function play(link){
+    video.src=link;
+    player.style.display="block";
     video.play();
 }
 
-// Serien: Staffeln anzeigen
-function showSeasons(seriesObj){
-    currentSeries = seriesObj;
-    currentSeason = null;
-    currentView = "seasons";
-    grid.innerHTML = "";
-    backBtn.style.display = "block";
-
-    seriesObj.seasons.forEach(season => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `<img src="files/covers/${season.episodes[0].cover}"><p>${seriesObj.name} - Staffel ${season.season}</p>`;
-        card.onclick = () => showEpisodes(season);
-        grid.appendChild(card);
+function showSeasons(s){
+    currentSeries=s;
+    currentView="seasons";
+    backBtn.style.display="block";
+    grid.innerHTML="";
+    s.seasons.forEach(se=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<p>Staffel ${se.season}</p>`;
+        c.onclick=()=>showEpisodes(se);
+        grid.appendChild(c);
     });
 }
 
-// Episoden anzeigen
-function showEpisodes(season){
-    currentSeason = season;
-    currentView = "episodes";
-    grid.innerHTML = "";
-    backBtn.style.display = "block";
-
-    season.episodes.forEach(ep => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `<img src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
-        card.onclick = () => playEpisode(currentSeries.name, season.season, ep.name);
-        grid.appendChild(card);
+function showEpisodes(se){
+    currentView="episodes";
+    grid.innerHTML="";
+    se.episodes.forEach(ep=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<img src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
+        c.onclick=()=>play(ep.link);
+        grid.appendChild(c);
     });
 }
 
-// Episode abspielen
-function playEpisode(seriesName, seasonNum, episode){
-    video.src = `files/series/${seriesName} Staffel ${seasonNum} ${episode}.mp4`;
-    player.style.display = "block";
-    backBtn.style.display = "none"; // kein Back-Button beim Video
-    video.play();
-}
-
-// Player schließen
-document.getElementById("close").onclick = () => {
+document.getElementById("close").onclick=()=>{
     video.pause();
-    video.src = "";
-    player.style.display = "none";
-    if(currentView === "seasons" || currentView === "episodes") backBtn.style.display = "block";
+    video.src="";
+    player.style.display="none";
 };
 
-// Grid-Zurück-Button
-backBtn.onclick = () => {
-    if(currentView === "episodes") showSeasons(currentSeries);
-    else if(currentView === "seasons") render(search.value.toLowerCase());
+backBtn.onclick=()=>{
+    if(currentView==="episodes") showSeasons(currentSeries);
+    else render(search.value.toLowerCase());
 };
 
-search.oninput = e => render(e.target.value.toLowerCase());
+search.oninput=e=>render(e.target.value.toLowerCase());
 render();
 </script>
 
