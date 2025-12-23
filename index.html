@@ -3,118 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Delay.Filme & Serien</title>
+<title>Delay.Filme & Serien – MP4</title>
 
 <style>
-*{box-sizing:border-box}
+:root{
+    --bg:#0a0614;
+    --card:#140c26;
+    --purple:#b56bff;
+    --glow:#7a2cff;
+}
 body{
     margin:0;
-    background:#0a0614;
-    color:#fff;
-    font-family:Arial,sans-serif;
+    background:var(--bg);
+    color:#eee;
+    font-family:Arial, sans-serif;
+    overflow-x:hidden;
 }
 header{
     padding:20px;
-    text-align:center;
     font-size:28px;
-    color:#b56bff;
+    font-weight:bold;
+    color:var(--purple);
+    text-align:center;
 }
 input{
-    width:calc(100% - 40px);
-    margin:0 20px 20px;
+    width:calc(100% - 50px);
+    margin:0 25px 20px;
     padding:12px;
+    font-size:16px;
     border-radius:8px;
     border:none;
     background:#1a1033;
     color:white;
 }
-h2{
-    margin:20px;
-    color:#b56bff;
-}
 .grid{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
     gap:15px;
-    padding:0 15px 30px;
+    padding:0 15px 50px;
 }
 .card{
-    background:#140c26;
+    background:var(--card);
     border-radius:10px;
     overflow:hidden;
     cursor:pointer;
+    transition:.25s;
 }
-.card img{width:100%;display:block}
+.card:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 20px var(--glow);
+}
+.card img{width:100%;}
 .card p{
     margin:0;
     padding:8px;
-    font-size:14px;
     text-align:center;
+    font-size:14px;
 }
 
-/* PLAYER */
-#overlay{
+#player{
     position:fixed;
     inset:0;
     background:black;
     display:none;
     z-index:1000;
+    justify-content:center;
+    align-items:center;
 }
-#overlay video{
+#player video{
     width:100%;
     height:100%;
 }
-#close{
+
+#close,#back{
     position:fixed;
     top:10px;
-    right:15px;
     font-size:32px;
-    color:#b56bff;
+    color:var(--purple);
     cursor:pointer;
-    z-index:1001;
+    z-index:1010;
 }
+#close{right:10px;}
+#back{right:50px;display:none;}
 
-/* LOADER */
 #loader{
-    position:absolute;
+    position:fixed;
     inset:0;
-    background:black;
-    display:flex;
+    background:rgba(0,0,0,0.85);
+    display:none;
     flex-direction:column;
-    align-items:center;
     justify-content:center;
+    align-items:center;
+    font-size:24px;
+    color:var(--purple);
+    z-index:1020;
 }
-#bar{
-    width:70%;
-    height:12px;
-    background:#222;
-    border-radius:6px;
-    overflow:hidden;
+#progress-container{
+    width:80%;
+    height:15px;
+    background:#333;
+    border-radius:8px;
     margin-top:20px;
 }
-#bar span{
-    display:block;
-    height:100%;
+#progress-bar{
     width:0%;
-    background:#b56bff;
-    transition:width .4s linear;
+    height:100%;
+    background:var(--purple);
+    border-radius:8px;
+    transition:width 0.6s ease;
 }
-#wait{
+#wait-text{
+    display:none;
     margin-top:10px;
-    font-size:14px;
+    font-size:16px;
     opacity:.8;
-    display:none;
-}
-
-/* NAV */
-#nav{
-    display:none;
-    padding:15px;
-}
-#back{
-    cursor:pointer;
-    color:#b56bff;
-    margin-bottom:10px;
 }
 </style>
 </head>
@@ -122,30 +124,68 @@ h2{
 <body>
 
 <header>🎬 Delay.Filme & Serien</header>
-<input id="search" placeholder="Suchen...">
+<input type="text" placeholder="Suchen..." id="search">
+<div id="back">✖</div>
+<div class="grid" id="movies"></div>
 
-<div id="nav">
-    <div id="back">⬅ Zurück</div>
-    <h2 id="navTitle"></h2>
-</div>
-
-<h2 id="moviesTitle">Filme</h2>
-<div class="grid" id="moviesGrid"></div>
-
-<h2 id="seriesTitle">Serien</h2>
-<div class="grid" id="seriesGrid"></div>
-
-<div id="overlay">
+<div id="player">
     <div id="close">✖</div>
-    <div id="loader">
-        <div>Video wird geladen…</div>
-        <div id="bar"><span></span></div>
-        <div id="wait">warte noch einen moment…</div>
-    </div>
     <video id="video" controls playsinline preload="metadata"></video>
 </div>
 
+<div id="loader">
+    🎬 Lade Video…
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    <div id="wait-text">Warte noch einen Moment…</div>
+</div>
+
 <script>
+// ================== FILME ==================
+const movies = [
+    {
+        name: "Zoomania",
+        cover: "Zoomania.jpg",
+        link: "https://archive.org/download/zoomania-fast/Zoomania_fast.mp4"
+    },
+    {
+        name: "Zoomania 2",
+        cover: "Zoomania 2.jpg",
+        link: "https://archive.org/download/zoomania-2-fast/Zoomania_2_fast.mp4"
+    },
+    {
+        name: "Jurassic World",
+        cover: "Jurassic World.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Jurassic World Das gefallene Königreich",
+        cover: "Jurassic World Das gefallene Königreich.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Jurassic World Die Wiedergeburt",
+        cover: "Jurassic World Die Wiedergeburt.jpg",
+        link: "https://archive.org/download/jurassic-world-die-wiedergeburt-fast/Jurassic_World_Die_Wiedergeburt_fast.mp4"
+    },
+    {
+        name: "Fack ju Göhte",
+        cover: "Fack ju Göhte.jpg",
+        link: "https://archive.org/download/fack-ju-gohte/Fack%20ju%20G%C3%B6hte.mp4"
+    },
+    {
+        name: "Fack ju Göhte 2",
+        cover: "Fack ju Göhte 2.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Fack ju Göhte 3",
+        cover: "Fack ju Göhte 3.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+];
+
 // ================== SERIEN ==================
 const series = [
     {
@@ -284,126 +324,73 @@ const series = [
         ]
     }
 ];
-
-const moviesGrid=moviesGrid=document.getElementById("moviesGrid");
-const seriesGrid=document.getElementById("seriesGrid");
-const overlay=document.getElementById("overlay");
+    
+const grid=document.getElementById("movies");
+const search=document.getElementById("search");
+const player=document.getElementById("player");
 const video=document.getElementById("video");
 const loader=document.getElementById("loader");
-const bar=document.querySelector("#bar span");
-const wait=document.getElementById("wait");
+const progressBar=document.getElementById("progress-bar");
+const waitText=document.getElementById("wait-text");
 const closeBtn=document.getElementById("close");
-const search=document.getElementById("search");
-const nav=document.getElementById("nav");
-const navTitle=document.getElementById("navTitle");
-const back=document.getElementById("back");
-const moviesTitle=document.getElementById("moviesTitle");
-const seriesTitle=document.getElementById("seriesTitle");
+const backBtn=document.getElementById("back");
 
-let state="home";
-let currentSerie=null;
-let currentSeason=null;
+let fakeProgressInterval=null;
 
-function fakeLoad(cb){
-    let p=0;
-    wait.style.display="none";
-    const i=setInterval(()=>{
-        p+=2;
-        bar.style.width=p+"%";
-        if(p>=100){wait.style.display="block";}
-    },300);
-    cb(()=>clearInterval(i));
+function render(filter=""){
+    grid.innerHTML="";
+    movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
+        c.onclick=()=>play(m.link);
+        grid.appendChild(c);
+    });
 }
 
 function play(link){
-    overlay.style.display="block";
-    loader.style.display="flex";
-    bar.style.width="0%";
+    document.body.style.overflow="hidden";
+    player.style.display="flex";
+    video.style.visibility="hidden";
     video.src=link;
-    fakeLoad(done=>{
-        video.oncanplay=()=>{
-            loader.style.display="none";
-            video.play();
-            done();
-        };
-    });
+    video.load();
+
+    loader.style.display="flex";
+    progressBar.style.width="0%";
+    waitText.style.display="none";
+
+    let progress=0;
+    clearInterval(fakeProgressInterval);
+
+    fakeProgressInterval=setInterval(()=>{
+        if(progress<90){
+            progress+=1;
+            progressBar.style.width=progress+"%";
+        }else{
+            progressBar.style.width="100%";
+            waitText.style.display="block";
+        }
+    },400);
+
+    video.oncanplay=()=>{
+        clearInterval(fakeProgressInterval);
+        loader.style.display="none";
+        video.style.visibility="visible";
+        video.play();
+    };
 }
 
 closeBtn.onclick=()=>{
     video.pause();
-    video.src="";
-    overlay.style.display="none";
+    video.removeAttribute("src");
+    player.style.display="none";
+    loader.style.display="none";
+    clearInterval(fakeProgressInterval);
+    document.body.style.overflow="auto";
 };
 
-back.onclick=()=>{
-    if(state==="episodes"){showSeasons(currentSerie);}
-    else if(state==="seasons"){renderHome();}
-};
-
-function renderHome(){
-    state="home";
-    nav.style.display="none";
-    moviesTitle.style.display="block";
-    seriesTitle.style.display="block";
-    renderMovies();
-    renderSeries();
-}
-
-function renderMovies(){
-    moviesGrid.innerHTML="";
-    movies.forEach(m=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerHTML=`<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
-        d.onclick=()=>play(m.link);
-        moviesGrid.appendChild(d);
-    });
-}
-
-function renderSeries(){
-    seriesGrid.innerHTML="";
-    series.forEach(s=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerHTML=`<img src="files/covers/${s.cover}"><p>${s.name}</p>`;
-        d.onclick=()=>showSeasons(s);
-        seriesGrid.appendChild(d);
-    });
-}
-
-function showSeasons(s){
-    state="seasons";
-    currentSerie=s;
-    nav.style.display="block";
-    navTitle.textContent=s.name+" – Staffeln";
-    moviesTitle.style.display="none";
-    seriesTitle.style.display="none";
-    moviesGrid.innerHTML="";
-    seriesGrid.innerHTML="";
-    s.seasons.forEach(se=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerHTML=`<img src="files/covers/${s.cover}"><p>Staffel ${se.season}</p>`;
-        d.onclick=()=>showEpisodes(se);
-        seriesGrid.appendChild(d);
-    });
-}
-
-function showEpisodes(se){
-    state="episodes";
-    currentSeason=se;
-    navTitle.textContent=currentSerie.name+" – Staffel "+se.season;
-    seriesGrid.innerHTML="";
-    se.episodes.forEach(e=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerHTML=`<img src="files/covers/${e.cover}"><p>${e.name}</p>`;
-        d.onclick=()=>play(e.link);
-        seriesGrid.appendChild(d);
-    });
-}
-
-renderHome();
+search.oninput=e=>render(e.target.value.toLowerCase());
+window.onload=()=>render();
 </script>
 
 </body>
