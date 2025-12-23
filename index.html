@@ -75,6 +75,7 @@ input{
     width:100%;
     height:100%;
     background:black;
+    visibility:hidden; /* Video erst sichtbar, wenn geladen */
 }
 
 #close{
@@ -96,35 +97,6 @@ input{
     z-index:1010;
     display:none;
 }
-
-/* Ladebildschirm */
-#loader{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.85);
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    font-size:24px;
-    color:var(--purple);
-    z-index:1020;
-    display:none;
-}
-#progress-container{
-    width:80%;
-    height:15px;
-    background:#333;
-    border-radius:8px;
-    margin-top:20px;
-}
-#progress-bar{
-    width:0%;
-    height:100%;
-    background:var(--purple);
-    border-radius:8px;
-    transition: width 0.2s;
-}
 </style>
 </head>
 
@@ -140,195 +112,34 @@ input{
     <video id="video" controls playsinline preload="metadata"></video>
 </div>
 
-<div id="loader">
-    🎬 Lade Video…
-    <div id="progress-container">
-        <div id="progress-bar"></div>
-    </div>
-</div>
-
 <script>
 // ================== FILME ==================
-const movies = [
-    {
-        name: "Zoomania",
-        cover: "Zoomania.jpg",
-        link: "https://archive.org/download/zoomania-fast/Zoomania_fast.mp4"
-    },
-    {
-        name: "Zoomania 2",
-        cover: "Zoomania 2.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World",
-        cover: "Jurassic World.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World Das gefallene Königreich",
-        cover: "Jurassic World Das gefallene Königreich.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World Die Wiedergeburt",
-        cover: "Jurassic World Die Wiedergeburt.jpg",
-        link: "https://archive.org/download/jurassic-world-die-wiedergeburt-fast/Jurassic_World_Die_Wiedergeburt_fast.mp4"
-    },
-    {
-        name: "Fack ju Göhte",
-        cover: "Fack ju Göhte.jpg",
-        link: "https://archive.org/download/fack-ju-gohte/Fack%20ju%20G%C3%B6hte.mp4"
-    },
-    {
-        name: "Fack ju Göhte 2",
-        cover: "Fack ju Göhte 2.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Fack ju Göhte 3",
-        cover: "Fack ju Göhte 3.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
+const movies=[
+ {name:"Zoomania", cover:"Zoomania.jpg", link:"https://archive.org/download/Zoomania/Zoomania_fast.mp4"},
+ {name:"Zoomania 2", cover:"Zoomania 2.jpg", link:"https://archive.org/download/Zoomania2/Zoomania2_fast.mp4"}
 ];
 
 // ================== SERIEN ==================
-const series = [
-    {
-        name: "Dexter",
-        seasons: [
-            {
-                season: 1,
-                episodes: [
-                    {
-                        name: "Episode 1",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 2",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 3",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 4",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 5",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 6",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 7",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 8",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 9",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 10",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 11",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 12",
-                        cover: "Dexter Staffel 1 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                ]
-            },
-            {
-                season: 2,
-                episodes: [
-                    {
-                        name: "Episode 1",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 2",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 3",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 4",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 5",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 6",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 7",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 8",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 9",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 10",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                    {
-                        name: "Episode 11",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
-                    },
-                    {
-                        name: "Episode 12",
-                        cover: "Dexter Staffel 2 Episode 1.jpg",
-                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
-                    },
-                ]
-            }
+const series=[
+  {
+    name:"Dexter",
+    seasons:[
+      {
+        season:1,
+        episodes:[
+          {name:"Episode 1", cover:"Dexter Staffel 1 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"},
+          {name:"Episode 2", cover:"Dexter Staffel 1 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"}
         ]
-    }
+      },
+      {
+        season:2,
+        episodes:[
+          {name:"Episode 1", cover:"Dexter Staffel 2 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S02E01.mp4"},
+          {name:"Episode 2", cover:"Dexter Staffel 2 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S02E02.mp4"}
+        ]
+      }
+    ]
+  }
 ];
 
 // ================== LOGIK ==================
@@ -338,8 +149,6 @@ const player=document.getElementById("player");
 const video=document.getElementById("video");
 const closeBtn=document.getElementById("close");
 const backBtn=document.getElementById("back");
-const loader=document.getElementById("loader");
-const progressBar=document.getElementById("progress-bar");
 
 let currentSeries=null;
 let currentView="main";
@@ -349,6 +158,7 @@ function render(filter=""){
     backBtn.style.display="none";
     currentView="main";
 
+    // Filme anzeigen
     movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
         const c=document.createElement("div");
         c.className="card";
@@ -357,6 +167,7 @@ function render(filter=""){
         grid.appendChild(c);
     });
 
+    // Serien anzeigen
     series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
         const c=document.createElement("div");
         c.className="card";
@@ -368,32 +179,40 @@ function render(filter=""){
 
 function play(link){
     player.style.display="block";
-    loader.style.display="flex";
-    progressBar.style.width="0%";
-
+    video.style.visibility="hidden";
     video.pause();
     video.src = link;
     video.load();
-
-    // Update Fortschrittsbalken
-    video.addEventListener('progress', updateProgress);
-    video.addEventListener('canplay', startVideo);
+    video.oncanplay = () => {
+        video.style.visibility="visible";
+        video.play().catch(()=>{});
+    };
 }
 
-function updateProgress(){
-    if(video.buffered.length > 0){
-        const bufferedEnd = video.buffered.end(video.buffered.length-1);
-        const duration = video.duration;
-        const percent = duration ? (bufferedEnd/duration)*100 : 0;
-        progressBar.style.width = percent+'%';
-    }
+function showSeasons(s){
+    currentSeries=s;
+    currentView="seasons";
+    backBtn.style.display="block";
+    grid.innerHTML="";
+    s.seasons.forEach(se=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<img loading="lazy" src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
+        c.onclick=()=>showEpisodes(se);
+        grid.appendChild(c);
+    });
 }
 
-function startVideo(){
-    video.removeEventListener('canplay', startVideo);
-    video.removeEventListener('progress', updateProgress);
-    loader.style.display="none";
-    video.play().catch(()=>{});
+function showEpisodes(se){
+    currentView="episodes";
+    grid.innerHTML="";
+    se.episodes.forEach(ep=>{
+        const c=document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<img loading="lazy" src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
+        c.onclick=()=>play(ep.link);
+        grid.appendChild(c);
+    });
 }
 
 closeBtn.onclick = ()=>{
@@ -401,8 +220,6 @@ closeBtn.onclick = ()=>{
     video.removeAttribute("src");
     video.load();
     player.style.display="none";
-    loader.style.display="none";
-    progressBar.style.width="0%";
 };
 
 backBtn.onclick = ()=>{
