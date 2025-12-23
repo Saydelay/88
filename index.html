@@ -75,7 +75,6 @@ input{
     width:100%;
     height:100%;
     background:black;
-    visibility:hidden; /* Video erst sichtbar, wenn geladen */
 }
 
 #close{
@@ -97,6 +96,35 @@ input{
     z-index:1010;
     display:none;
 }
+
+/* Ladebildschirm */
+#loader{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    font-size:24px;
+    color:var(--purple);
+    z-index:1020;
+    display:none;
+}
+#progress-container{
+    width:80%;
+    height:15px;
+    background:#333;
+    border-radius:8px;
+    margin-top:20px;
+}
+#progress-bar{
+    width:0%;
+    height:100%;
+    background:var(--purple);
+    border-radius:8px;
+    transition: width 0.2s;
+}
 </style>
 </head>
 
@@ -110,6 +138,13 @@ input{
 <div id="player">
     <div id="close">✖</div>
     <video id="video" controls playsinline preload="metadata"></video>
+</div>
+
+<div id="loader">
+    🎬 Lade Video…
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
 </div>
 
 <script>
@@ -138,7 +173,7 @@ const movies = [
     {
         name: "Jurassic World Die Wiedergeburt",
         cover: "Jurassic World Die Wiedergeburt.jpg",
-        link: "https://archive.org/download/jurassic-world-die-wiedergeburt/Jurassic%20World%20Die%20Wiedergeburt.mp4"
+        link: "https://archive.org/download/jurassic-world-die-wiedergeburt-fast/Jurassic_World_Die_Wiedergeburt_fast.mp4"
     },
     {
         name: "Fack ju Göhte",
@@ -303,6 +338,8 @@ const player=document.getElementById("player");
 const video=document.getElementById("video");
 const closeBtn=document.getElementById("close");
 const backBtn=document.getElementById("back");
+const loader=document.getElementById("loader");
+const progressBar=document.getElementById("progress-bar");
 
 let currentSeries=null;
 let currentView="main";
@@ -312,7 +349,6 @@ function render(filter=""){
     backBtn.style.display="none";
     currentView="main";
 
-    // Filme anzeigen
     movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
         const c=document.createElement("div");
         c.className="card";
@@ -321,7 +357,6 @@ function render(filter=""){
         grid.appendChild(c);
     });
 
-    // Serien anzeigen
     series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
         const c=document.createElement("div");
         c.className="card";
@@ -333,40 +368,32 @@ function render(filter=""){
 
 function play(link){
     player.style.display="block";
-    video.style.visibility="hidden";
+    loader.style.display="flex";
+    progressBar.style.width="0%";
+
     video.pause();
     video.src = link;
     video.load();
-    video.oncanplay = () => {
-        video.style.visibility="visible";
-        video.play().catch(()=>{});
-    };
+
+    // Update Fortschrittsbalken
+    video.addEventListener('progress', updateProgress);
+    video.addEventListener('canplay', startVideo);
 }
 
-function showSeasons(s){
-    currentSeries=s;
-    currentView="seasons";
-    backBtn.style.display="block";
-    grid.innerHTML="";
-    s.seasons.forEach(se=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
-        c.onclick=()=>showEpisodes(se);
-        grid.appendChild(c);
-    });
+function updateProgress(){
+    if(video.buffered.length > 0){
+        const bufferedEnd = video.buffered.end(video.buffered.length-1);
+        const duration = video.duration;
+        const percent = duration ? (bufferedEnd/duration)*100 : 0;
+        progressBar.style.width = percent+'%';
+    }
 }
 
-function showEpisodes(se){
-    currentView="episodes";
-    grid.innerHTML="";
-    se.episodes.forEach(ep=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
-        c.onclick=()=>play(ep.link);
-        grid.appendChild(c);
-    });
+function startVideo(){
+    video.removeEventListener('canplay', startVideo);
+    video.removeEventListener('progress', updateProgress);
+    loader.style.display="none";
+    video.play().catch(()=>{});
 }
 
 closeBtn.onclick = ()=>{
@@ -374,6 +401,8 @@ closeBtn.onclick = ()=>{
     video.removeAttribute("src");
     video.load();
     player.style.display="none";
+    loader.style.display="none";
+    progressBar.style.width="0%";
 };
 
 backBtn.onclick = ()=>{
