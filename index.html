@@ -11,21 +11,20 @@ body{
     margin:0;
     background:#0a0614;
     color:#fff;
-    font-family:Arial, sans-serif;
-    overflow-x:hidden;
+    font-family:Arial,sans-serif;
 }
 header{
     padding:20px;
-    font-size:28px;
     text-align:center;
+    font-size:28px;
     color:#b56bff;
 }
 input{
     width:calc(100% - 40px);
     margin:0 20px 20px;
     padding:12px;
-    border:none;
     border-radius:8px;
+    border:none;
     background:#1a1033;
     color:white;
 }
@@ -45,15 +44,12 @@ h2{
     overflow:hidden;
     cursor:pointer;
 }
-.card img{
-    width:100%;
-    display:block;
-}
+.card img{width:100%;display:block}
 .card p{
     margin:0;
     padding:8px;
-    text-align:center;
     font-size:14px;
+    text-align:center;
 }
 
 /* PLAYER */
@@ -62,7 +58,7 @@ h2{
     inset:0;
     background:black;
     display:none;
-    z-index:999;
+    z-index:1000;
 }
 #overlay video{
     width:100%;
@@ -75,10 +71,10 @@ h2{
     font-size:32px;
     color:#b56bff;
     cursor:pointer;
-    z-index:1000;
+    z-index:1001;
 }
 
-/* FAKE LOADER */
+/* LOADER */
 #loader{
     position:absolute;
     inset:0;
@@ -87,7 +83,6 @@ h2{
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    z-index:1001;
 }
 #bar{
     width:70%;
@@ -102,13 +97,24 @@ h2{
     height:100%;
     width:0%;
     background:#b56bff;
-    transition:width 0.4s linear;
+    transition:width .4s linear;
 }
 #wait{
     margin-top:10px;
     font-size:14px;
     opacity:.8;
     display:none;
+}
+
+/* NAV */
+#nav{
+    display:none;
+    padding:15px;
+}
+#back{
+    cursor:pointer;
+    color:#b56bff;
+    margin-bottom:10px;
 }
 </style>
 </head>
@@ -118,69 +124,28 @@ h2{
 <header>🎬 Delay.Filme & Serien</header>
 <input id="search" placeholder="Suchen...">
 
-<h2>Filme</h2>
+<div id="nav">
+    <div id="back">⬅ Zurück</div>
+    <h2 id="navTitle"></h2>
+</div>
+
+<h2 id="moviesTitle">Filme</h2>
 <div class="grid" id="moviesGrid"></div>
 
-<h2>Serien</h2>
+<h2 id="seriesTitle">Serien</h2>
 <div class="grid" id="seriesGrid"></div>
 
 <div id="overlay">
     <div id="close">✖</div>
-
     <div id="loader">
         <div>Video wird geladen…</div>
         <div id="bar"><span></span></div>
         <div id="wait">warte noch einen moment…</div>
     </div>
-
     <video id="video" controls playsinline preload="metadata"></video>
 </div>
 
 <script>
-// ================== FILME ==================
-const movies = [
-    {
-        name: "Zoomania",
-        cover: "Zoomania.jpg",
-        link: "https://archive.org/download/zoomania-fast/Zoomania_fast.mp4"
-    },
-    {
-        name: "Zoomania 2",
-        cover: "Zoomania 2.jpg",
-        link: "https://archive.org/download/zoomania-2-fast/Zoomania_2_fast.mp4"
-    },
-    {
-        name: "Jurassic World",
-        cover: "Jurassic World.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World Das gefallene Königreich",
-        cover: "Jurassic World Das gefallene Königreich.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World Die Wiedergeburt",
-        cover: "Jurassic World Die Wiedergeburt.jpg",
-        link: "https://archive.org/download/jurassic-world-die-wiedergeburt-fast/Jurassic_World_Die_Wiedergeburt_fast.mp4"
-    },
-    {
-        name: "Fack ju Göhte",
-        cover: "Fack ju Göhte.jpg",
-        link: "https://archive.org/download/fack-ju-gohte/Fack%20ju%20G%C3%B6hte.mp4"
-    },
-    {
-        name: "Fack ju Göhte 2",
-        cover: "Fack ju Göhte 2.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Fack ju Göhte 3",
-        cover: "Fack ju Göhte 3.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-];
-
 // ================== SERIEN ==================
 const series = [
     {
@@ -320,15 +285,24 @@ const series = [
     }
 ];
 
-const moviesGrid=document.getElementById("moviesGrid");
+const moviesGrid=moviesGrid=document.getElementById("moviesGrid");
 const seriesGrid=document.getElementById("seriesGrid");
 const overlay=document.getElementById("overlay");
 const video=document.getElementById("video");
-const closeBtn=document.getElementById("close");
 const loader=document.getElementById("loader");
 const bar=document.querySelector("#bar span");
 const wait=document.getElementById("wait");
+const closeBtn=document.getElementById("close");
 const search=document.getElementById("search");
+const nav=document.getElementById("nav");
+const navTitle=document.getElementById("navTitle");
+const back=document.getElementById("back");
+const moviesTitle=document.getElementById("moviesTitle");
+const seriesTitle=document.getElementById("seriesTitle");
+
+let state="home";
+let currentSerie=null;
+let currentSeason=null;
 
 function fakeLoad(cb){
     let p=0;
@@ -336,12 +310,9 @@ function fakeLoad(cb){
     const i=setInterval(()=>{
         p+=2;
         bar.style.width=p+"%";
-        if(p>=100){
-            clearInterval(i);
-            wait.style.display="block";
-        }
+        if(p>=100){wait.style.display="block";}
     },300);
-    cb(()=>{clearInterval(i);});
+    cb(()=>clearInterval(i));
 }
 
 function play(link){
@@ -364,36 +335,75 @@ closeBtn.onclick=()=>{
     overlay.style.display="none";
 };
 
-function render(filter=""){
-    moviesGrid.innerHTML="";
-    seriesGrid.innerHTML="";
+back.onclick=()=>{
+    if(state==="episodes"){showSeasons(currentSerie);}
+    else if(state==="seasons"){renderHome();}
+};
 
-    movies.filter(m=>m.name.toLowerCase().includes(filter))
-    .forEach(m=>{
+function renderHome(){
+    state="home";
+    nav.style.display="none";
+    moviesTitle.style.display="block";
+    seriesTitle.style.display="block";
+    renderMovies();
+    renderSeries();
+}
+
+function renderMovies(){
+    moviesGrid.innerHTML="";
+    movies.forEach(m=>{
         const d=document.createElement("div");
         d.className="card";
         d.innerHTML=`<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
         d.onclick=()=>play(m.link);
         moviesGrid.appendChild(d);
     });
+}
 
+function renderSeries(){
+    seriesGrid.innerHTML="";
     series.forEach(s=>{
-        s.seasons.forEach(se=>{
-            se.episodes.forEach(e=>{
-                if(e.name.toLowerCase().includes(filter)){
-                    const d=document.createElement("div");
-                    d.className="card";
-                    d.innerHTML=`<img src="files/covers/${e.cover}"><p>${s.name} S${se.season} ${e.name}</p>`;
-                    d.onclick=()=>play(e.link);
-                    seriesGrid.appendChild(d);
-                }
-            });
-        });
+        const d=document.createElement("div");
+        d.className="card";
+        d.innerHTML=`<img src="files/covers/${s.cover}"><p>${s.name}</p>`;
+        d.onclick=()=>showSeasons(s);
+        seriesGrid.appendChild(d);
     });
 }
 
-search.oninput=e=>render(e.target.value.toLowerCase());
-render();
+function showSeasons(s){
+    state="seasons";
+    currentSerie=s;
+    nav.style.display="block";
+    navTitle.textContent=s.name+" – Staffeln";
+    moviesTitle.style.display="none";
+    seriesTitle.style.display="none";
+    moviesGrid.innerHTML="";
+    seriesGrid.innerHTML="";
+    s.seasons.forEach(se=>{
+        const d=document.createElement("div");
+        d.className="card";
+        d.innerHTML=`<img src="files/covers/${s.cover}"><p>Staffel ${se.season}</p>`;
+        d.onclick=()=>showEpisodes(se);
+        seriesGrid.appendChild(d);
+    });
+}
+
+function showEpisodes(se){
+    state="episodes";
+    currentSeason=se;
+    navTitle.textContent=currentSerie.name+" – Staffel "+se.season;
+    seriesGrid.innerHTML="";
+    se.episodes.forEach(e=>{
+        const d=document.createElement("div");
+        d.className="card";
+        d.innerHTML=`<img src="files/covers/${e.cover}"><p>${e.name}</p>`;
+        d.onclick=()=>play(e.link);
+        seriesGrid.appendChild(d);
+    });
+}
+
+renderHome();
 </script>
 
 </body>
