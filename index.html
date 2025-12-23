@@ -114,32 +114,186 @@ input{
 
 <script>
 // ================== FILME ==================
-const movies=[
- {name:"Zoomania", cover:"Zoomania.jpg", link:"https://archive.org/download/Zoomania/Zoomania_fast.mp4"},
- {name:"Zoomania 2", cover:"Zoomania 2.jpg", link:"https://archive.org/download/Zoomania2/Zoomania2_fast.mp4"}
+const movies = [
+    {
+        name: "Zoomania",
+        cover: "Zoomania.jpg",
+        link: "https://archive.org/download/zoomania-fast/Zoomania_fast.mp4"
+    },
+    {
+        name: "Zoomania 2",
+        cover: "Zoomania 2.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Jurassic World",
+        cover: "Jurassic World.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Jurassic World Das gefallene Königreich",
+        cover: "Jurassic World Das gefallene Königreich.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Jurassic World Die Wiedergeburt",
+        cover: "Jurassic World Die Wiedergeburt.jpg",
+        link: "https://archive.org/download/jurassic-world-die-wiedergeburt-fast/Jurassic_World_Die_Wiedergeburt_fast.mp4"
+    },
+    {
+        name: "Fack ju Göhte",
+        cover: "Fack ju Göhte.jpg",
+        link: "https://archive.org/download/fack-ju-gohte/Fack%20ju%20G%C3%B6hte.mp4"
+    },
+    {
+        name: "Fack ju Göhte 2",
+        cover: "Fack ju Göhte 2.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
+    {
+        name: "Fack ju Göhte 3",
+        cover: "Fack ju Göhte 3.jpg",
+        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
+    },
 ];
 
 // ================== SERIEN ==================
-const series=[
-  {
-    name:"Dexter",
-    seasons:[
-      {
-        season:1,
-        episodes:[
-          {name:"Episode 1", cover:"Dexter Staffel 1 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"},
-          {name:"Episode 2", cover:"Dexter Staffel 1 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"}
+const series = [
+    {
+        name: "Dexter",
+        seasons: [
+            {
+                season: 1,
+                episodes: [
+                    {
+                        name: "Episode 1",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 2",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 3",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 4",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 5",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 6",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 7",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 8",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 9",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 10",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 11",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 12",
+                        cover: "Dexter Staffel 1 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                ]
+            },
+            {
+                season: 2,
+                episodes: [
+                    {
+                        name: "Episode 1",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 2",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 3",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 4",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 5",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 6",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 7",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 8",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 9",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 10",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                    {
+                        name: "Episode 11",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E01.mp4"
+                    },
+                    {
+                        name: "Episode 12",
+                        cover: "Dexter Staffel 2 Episode 1.jpg",
+                        link: "https://archive.org/download/DEIN_ORDNER/IT_S01E02.mp4"
+                    },
+                ]
+            }
         ]
-      },
-      {
-        season:2,
-        episodes:[
-          {name:"Episode 1", cover:"Dexter Staffel 2 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S02E01.mp4"},
-          {name:"Episode 2", cover:"Dexter Staffel 2 Episode 1.jpg", link:"https://archive.org/download/DEIN_ORDNER/IT_S02E02.mp4"}
-        ]
-      }
-    ]
-  }
+    }
 ];
 
 // ================== LOGIK ==================
