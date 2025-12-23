@@ -346,6 +346,7 @@ const series = [
     }
 ];
 
+// ================== LOGIK ==================
 const grid=document.getElementById("movies");
 const search=document.getElementById("search");
 const player=document.getElementById("player");
@@ -381,9 +382,8 @@ function render(filter=""){
     });
 }
 
-// Video abspielen mit Ladebildschirm + Fortschritt
+// Video abspielen mit Ladebildschirm + Fortschrittsbalken
 function play(link){
-    // Hintergrund sperren
     document.body.style.overflow="hidden";
     loader.style.display="flex";
     progressBar.style.width="0%";
@@ -393,7 +393,6 @@ function play(link){
     video.src=link;
     video.load();
 
-    // Fortschrittsbalken
     video.addEventListener('progress', updateProgress);
     video.addEventListener('canplay', startVideo);
 }
