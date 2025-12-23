@@ -52,6 +52,9 @@ input{
     transform:scale(1.08);
     box-shadow:0 0 20px var(--glow);
 }
+@media (hover:none){
+    .card:hover{transform:none;box-shadow:none;}
+}
 .card img{
     width:100%;
     display:block;
@@ -74,6 +77,17 @@ input{
     height:100%;
 }
 
+#loading{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--purple);
+    font-size:18px;
+    background:black;
+}
+
 #close,#back{
     position:fixed;
     top:12px;
@@ -84,8 +98,8 @@ input{
     z-index:1010;
 }
 #back{
-    right:20px; /* etwas links vom Video-X */
-    
+    right:20px;
+    display:none;
 }
 </style>
 </head>
@@ -99,6 +113,7 @@ input{
 
 <div id="player">
     <div id="close">✖</div>
+    <div id="loading">Lade Video…</div>
     <video id="video" controls playsinline preload="metadata"></video>
 </div>
 
@@ -287,14 +302,16 @@ const series = [
 ];
 
 // ================== LOGIK ==================
-const grid = document.getElementById("movies");
-const search = document.getElementById("search");
-const player = document.getElementById("player");
-const video = document.getElementById("video");
-const backBtn = document.getElementById("back");
+const grid=document.getElementById("movies");
+const search=document.getElementById("search");
+const player=document.getElementById("player");
+const video=document.getElementById("video");
+const backBtn=document.getElementById("back");
+const loading=document.getElementById("loading");
 
-let currentSeries = null;
-let currentView = "main";
+let currentSeries=null;
+let currentView="main";
+let searchTimer;
 
 function render(filter=""){
     grid.innerHTML="";
@@ -304,7 +321,7 @@ function render(filter=""){
     movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${m.cover}"><p>${m.name}</p>`;
+        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${m.cover}"><p>${m.name}</p>`;
         c.onclick=()=>play(m.link);
         grid.appendChild(c);
     });
@@ -312,7 +329,7 @@ function render(filter=""){
     series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
+        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
         c.onclick=()=>showSeasons(s);
         grid.appendChild(c);
     });
@@ -320,8 +337,11 @@ function render(filter=""){
 
 function play(link){
     player.style.display="block";
-    video.src = link;
-    video.load();
+    loading.style.display="flex";
+    if(video.src!==link){
+        video.src=link;
+        video.load();
+    }
 }
 
 function showSeasons(s){
@@ -332,7 +352,7 @@ function showSeasons(s){
     s.seasons.forEach(se=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
+        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
         c.onclick=()=>showEpisodes(se);
         grid.appendChild(c);
     });
@@ -344,11 +364,14 @@ function showEpisodes(se){
     se.episodes.forEach(ep=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
+        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
         c.onclick=()=>play(ep.link);
         grid.appendChild(c);
     });
 }
+
+video.addEventListener("canplay",()=>loading.style.display="none");
+video.addEventListener("waiting",()=>loading.style.display="flex");
 
 document.getElementById("close").onclick=()=>{
     video.pause();
@@ -362,7 +385,11 @@ backBtn.onclick=()=>{
     else render(search.value.toLowerCase());
 };
 
-search.oninput=e=>render(e.target.value.toLowerCase());
+search.oninput=e=>{
+    clearTimeout(searchTimer);
+    searchTimer=setTimeout(()=>render(e.target.value.toLowerCase()),200);
+};
+
 render();
 </script>
 
