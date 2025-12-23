@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Delay.Filme & Serien – MP4</title>
+<title>Delay.Filme & Serien</title>
 
 <style>
 :root{
     --bg:#0a0614;
     --card:#140c26;
     --purple:#b56bff;
-    --glow:#7a2cff;
 }
 body{
     margin:0;
@@ -22,20 +21,17 @@ body{
 header{
     padding:20px;
     font-size:28px;
-    font-weight:bold;
     color:var(--purple);
     text-align:center;
 }
 input{
-    width:calc(100% - 50px);
-    margin:0 25px 20px;
+    width:calc(100% - 40px);
+    margin:0 20px 20px;
     padding:12px;
-    font-size:16px;
     border-radius:8px;
     border:none;
     background:#1a1033;
     color:white;
-    box-sizing:border-box;
 }
 .grid{
     display:grid;
@@ -48,19 +44,8 @@ input{
     border-radius:10px;
     overflow:hidden;
     cursor:pointer;
-    transition:.25s;
 }
-.card:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 20px var(--glow);
-}
-@media (hover:none){
-    .card:hover{transform:none;box-shadow:none;}
-}
-.card img{
-    width:100%;
-    display:block;
-}
+.card img{width:100%;}
 .card p{
     margin:0;
     padding:8px;
@@ -74,14 +59,10 @@ input{
     background:black;
     display:none;
     z-index:1000;
-    display:flex;
-    justify-content:center;
-    align-items:center;
 }
 #player video{
     width:100%;
     height:100%;
-    background:black;
 }
 
 #close{
@@ -94,51 +75,34 @@ input{
     z-index:1010;
 }
 
-#back{
-    position:fixed;
-    top:10px;
-    right:50px;
-    font-size:32px;
-    color:var(--purple);
-    cursor:pointer;
-    z-index:1010;
-    display:none;
-}
-
-/* Ladebildschirm */
+/* LOADER */
 #loader{
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,0.85);
-    display:flex;
+    background:rgba(0,0,0,0.9);
+    display:none;
     flex-direction:column;
     justify-content:center;
     align-items:center;
-    font-size:24px;
-    color:var(--purple);
-    z-index:1020;
-    display:none;
+    z-index:2000;
+}
+#loader span{
+    margin-top:15px;
+    font-size:16px;
+    color:#ccc;
 }
 #progress-container{
     width:80%;
-    height:15px;
+    height:14px;
     background:#333;
-    border-radius:8px;
-    margin-top:20px;
+    border-radius:7px;
+    overflow:hidden;
 }
 #progress-bar{
     width:0%;
     height:100%;
     background:var(--purple);
-    border-radius:8px;
-    transition:width 0.1s;
-}
-
-@media (max-width:768px){
-    header{font-size:24px;}
-    input{width:calc(100% - 30px); margin:0 15px 15px; padding:10px;}
-    .card p{font-size:12px; padding:6px;}
-    .grid{gap:10px; padding:0 10px 40px;}
+    transition:width .4s;
 }
 </style>
 </head>
@@ -147,7 +111,6 @@ input{
 
 <header>🎬 Delay.Filme & Serien</header>
 <input type="text" placeholder="Suchen..." id="search">
-<div id="back">✖</div>
 <div class="grid" id="movies"></div>
 
 <div id="player">
@@ -156,10 +119,10 @@ input{
 </div>
 
 <div id="loader">
-    🎬 Lade Video…
     <div id="progress-container">
         <div id="progress-bar"></div>
     </div>
+    <span id="loader-text">Video wird vorbereitet…</span>
 </div>
 
 <script>
@@ -346,130 +309,90 @@ const series = [
     }
 ];
 
-// ================== LOGIK ==================
+// ================== ELEMENTE ==================
 const grid=document.getElementById("movies");
 const search=document.getElementById("search");
 const player=document.getElementById("player");
 const video=document.getElementById("video");
-const closeBtn=document.getElementById("close");
-const backBtn=document.getElementById("back");
 const loader=document.getElementById("loader");
-const progressBar=document.getElementById("progress-bar");
+const bar=document.getElementById("progress-bar");
+const loaderText=document.getElementById("loader-text");
+const closeBtn=document.getElementById("close");
 
-let currentSeries=null;
-let currentView="main";
-let fakeProgressInterval=null;
+let progress=0;
+let loaderInterval=null;
+let videoReady=false;
 
+// ================== RENDER ==================
 function render(filter=""){
     grid.innerHTML="";
-    backBtn.style.display="none";
-    currentView="main";
-
-    movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
+    movies.filter(m=>m.name.toLowerCase().includes(filter))
+    .forEach(m=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${m.cover}"><p>${m.name}</p>`;
+        c.innerHTML=`<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
         c.onclick=()=>play(m.link);
         grid.appendChild(c);
     });
-
-    series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
-        c.onclick=()=>showSeasons(s);
-        grid.appendChild(c);
-    });
 }
 
-// Video abspielen mit Fake-Ladebildschirm 30 Sekunden
+// ================== PLAY ==================
 function play(link){
     document.body.style.overflow="hidden";
-    player.style.display="flex";
-    video.style.visibility="hidden";
-    video.pause();
-    video.src = link;
+    player.style.display="block";
+    loader.style.display="flex";
+    bar.style.width="0%";
+    loaderText.textContent="Video wird vorbereitet…";
+    progress=0;
+    videoReady=false;
+
+    video.src=link;
     video.load();
 
-    loader.style.display="flex";
-    progressBar.style.width="0%";
+    clearInterval(loaderInterval);
+    loaderInterval=setInterval(()=>{
+        if(progress < 90){
+            progress += 1; // LANGSAM
+            bar.style.width=progress+"%";
+        }else{
+            loaderText.textContent="Warte noch einen Moment…";
+        }
+    }, 400);
 
-    let progress = 0;
-    clearInterval(fakeProgressInterval);
-    fakeProgressInterval = setInterval(()=>{
-        progress += Math.random()*2; // Zufälliger Fortschritt
-        if(progress>100) progress=100;
-        progressBar.style.width = progress + "%";
-    }, 300);
+    video.oncanplay=()=>{
+        videoReady=true;
+        finishLoading();
+    };
 
-    let maxTimeout = setTimeout(endLoader, 30000); // max 30 Sekunden
+    // Sicherheit: max 30s
+    setTimeout(finishLoading,30000);
+}
 
-    video.oncanplay = () => endLoader();
+function finishLoading(){
+    if(!videoReady && progress < 90) return;
 
-    function endLoader(){
-        clearInterval(fakeProgressInterval);
-        clearTimeout(maxTimeout);
+    clearInterval(loaderInterval);
+    bar.style.width="100%";
+    setTimeout(()=>{
         loader.style.display="none";
-        video.style.visibility="visible";
         video.play().catch(()=>{});
-    }
+    },400);
 }
 
-// Serien-Funktionen
-function showSeasons(s){
-    currentSeries=s;
-    currentView="seasons";
-    backBtn.style.display="block";
-    grid.innerHTML="";
-    s.seasons.forEach(se=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
-        c.onclick=()=>showEpisodes(se);
-        grid.appendChild(c);
-    });
-}
-
-function showEpisodes(se){
-    currentView="episodes";
-    grid.innerHTML="";
-    se.episodes.forEach(ep=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
-        c.onclick=()=>play(ep.link);
-        grid.appendChild(c);
-    });
-}
-
-// Buttons
-closeBtn.onclick = ()=>{
+// ================== CLOSE ==================
+closeBtn.onclick=()=>{
     video.pause();
     video.removeAttribute("src");
     video.load();
     player.style.display="none";
     loader.style.display="none";
-    progressBar.style.width="0%";
     document.body.style.overflow="auto";
-    clearInterval(fakeProgressInterval);
+    clearInterval(loaderInterval);
 };
 
-backBtn.onclick = ()=>{
-    if(currentView==="episodes") showSeasons(currentSeries);
-    else render(search.value.toLowerCase());
-};
-
-// Suchfeld
-search.oninput = e=>render(e.target.value.toLowerCase());
-
-// Hauptmenü beim Laden
-window.onload = ()=>{
-    player.style.display="none";
-    loader.style.display="none";
-    backBtn.style.display="none";
-    document.body.style.overflow="auto";
-    render();
-};
+// ================== EVENTS ==================
+search.oninput=e=>render(e.target.value.toLowerCase());
+window.onload=render;
 </script>
 
 </body>
