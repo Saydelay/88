@@ -17,28 +17,31 @@ body{
     background:var(--bg);
     color:#eee;
     font-family:Arial, sans-serif;
+    overflow-x:hidden;
 }
 header{
-    padding:25px;
-    font-size:32px;
+    padding:20px;
+    font-size:28px;
     font-weight:bold;
     color:var(--purple);
+    text-align:center;
 }
 input{
     width:calc(100% - 50px);
-    margin:0 25px 25px;
-    padding:14px;
+    margin:0 25px 20px;
+    padding:12px;
     font-size:16px;
     border-radius:8px;
     border:none;
     background:#1a1033;
     color:white;
+    box-sizing:border-box;
 }
 .grid{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-    gap:18px;
-    padding:0 25px 60px;
+    gap:15px;
+    padding:0 15px 50px;
 }
 .card{
     background:var(--card);
@@ -48,7 +51,7 @@ input{
     transition:.25s;
 }
 .card:hover{
-    transform:scale(1.08);
+    transform:scale(1.05);
     box-shadow:0 0 20px var(--glow);
 }
 @media (hover:none){
@@ -60,8 +63,9 @@ input{
 }
 .card p{
     margin:0;
-    padding:10px;
+    padding:8px;
     text-align:center;
+    font-size:14px;
 }
 
 #player{
@@ -70,32 +74,71 @@ input{
     background:black;
     display:none;
     z-index:1000;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 #player video{
     width:100%;
     height:100%;
     background:black;
-    visibility:hidden; /* Video erst sichtbar, wenn geladen */
 }
 
 #close{
     position:fixed;
-    top:12px;
-    right:12px;
+    top:10px;
+    right:10px;
     font-size:32px;
     color:var(--purple);
     cursor:pointer;
     z-index:1010;
 }
+
 #back{
     position:fixed;
-    top:12px;
-    right:52px;
+    top:10px;
+    right:50px;
     font-size:32px;
     color:var(--purple);
     cursor:pointer;
     z-index:1010;
     display:none;
+}
+
+/* Ladebildschirm */
+#loader{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    font-size:24px;
+    color:var(--purple);
+    z-index:1020;
+    display:none;
+}
+#progress-container{
+    width:80%;
+    height:15px;
+    background:#333;
+    border-radius:8px;
+    margin-top:20px;
+}
+#progress-bar{
+    width:0%;
+    height:100%;
+    background:var(--purple);
+    border-radius:8px;
+    transition:width 0.2s;
+}
+
+@media (max-width:768px){
+    header{font-size:24px;}
+    input{width:calc(100% - 30px); margin:0 15px 15px; padding:10px;}
+    .card p{font-size:12px; padding:6px;}
+    .grid{gap:10px; padding:0 10px 40px;}
 }
 </style>
 </head>
@@ -110,6 +153,13 @@ input{
 <div id="player">
     <div id="close">✖</div>
     <video id="video" controls playsinline preload="metadata"></video>
+</div>
+
+<div id="loader">
+    🎬 Lade Video…
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
 </div>
 
 <script>
@@ -296,53 +346,76 @@ const series = [
     }
 ];
 
-// ================== LOGIK ==================
 const grid=document.getElementById("movies");
 const search=document.getElementById("search");
 const player=document.getElementById("player");
 const video=document.getElementById("video");
 const closeBtn=document.getElementById("close");
 const backBtn=document.getElementById("back");
+const loader=document.getElementById("loader");
+const progressBar=document.getElementById("progress-bar");
 
 let currentSeries=null;
 let currentView="main";
 
+// Render Funktion
 function render(filter=""){
     grid.innerHTML="";
     backBtn.style.display="none";
     currentView="main";
 
-    // Filme anzeigen
     movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${m.cover}"><p>${m.name}</p>`;
+        c.innerHTML=`<img loading="lazy" src="files/covers/${m.cover}"><p>${m.name}</p>`;
         c.onclick=()=>play(m.link);
         grid.appendChild(c);
     });
 
-    // Serien anzeigen
     series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
+        c.innerHTML=`<img loading="lazy" src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
         c.onclick=()=>showSeasons(s);
         grid.appendChild(c);
     });
 }
 
+// Video abspielen mit Ladebildschirm + Fortschritt
 function play(link){
-    player.style.display="block";
+    // Hintergrund sperren
+    document.body.style.overflow="hidden";
+    loader.style.display="flex";
+    progressBar.style.width="0%";
+    player.style.display="flex";
     video.style.visibility="hidden";
     video.pause();
-    video.src = link;
+    video.src=link;
     video.load();
-    video.oncanplay = () => {
-        video.style.visibility="visible";
-        video.play().catch(()=>{});
-    };
+
+    // Fortschrittsbalken
+    video.addEventListener('progress', updateProgress);
+    video.addEventListener('canplay', startVideo);
 }
 
+function updateProgress(){
+    if(video.buffered.length>0){
+        const bufferedEnd=video.buffered.end(video.buffered.length-1);
+        const duration=video.duration;
+        const percent = duration ? (bufferedEnd/duration)*100 : 0;
+        progressBar.style.width = percent + '%';
+    }
+}
+
+function startVideo(){
+    video.removeEventListener('canplay', startVideo);
+    video.removeEventListener('progress', updateProgress);
+    loader.style.display="none";
+    video.style.visibility="visible";
+    video.play().catch(()=>{});
+}
+
+// Serien-Funktionen
 function showSeasons(s){
     currentSeries=s;
     currentView="seasons";
@@ -369,11 +442,15 @@ function showEpisodes(se){
     });
 }
 
+// Buttons
 closeBtn.onclick = ()=>{
     video.pause();
     video.removeAttribute("src");
     video.load();
     player.style.display="none";
+    loader.style.display="none";
+    progressBar.style.width="0%";
+    document.body.style.overflow="auto";
 };
 
 backBtn.onclick = ()=>{
