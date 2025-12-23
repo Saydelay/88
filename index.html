@@ -6,7 +6,6 @@
 <title>Delay.Filme & Serien – MP4</title>
 
 <style>
-/* ===== GLOBAL FIX: KEIN HORIZONTAL SCROLL ===== */
 html, body{
     width:100%;
     max-width:100%;
@@ -15,7 +14,6 @@ html, body{
     padding:0;
 }
 
-/* ===== DESIGN ===== */
 :root{
     --bg:#0a0614;
     --card:#140c26;
@@ -48,7 +46,6 @@ input{
     box-sizing:border-box;
 }
 
-/* ===== GRID ===== */
 .grid{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
@@ -83,7 +80,6 @@ input{
     font-size:14px;
 }
 
-/* ===== PLAYER ===== */
 #player{
     position:fixed;
     inset:0;
@@ -98,7 +94,7 @@ input{
     height:100%;
 }
 
-#close,#back{
+#close,#back,#loader-close{
     position:fixed;
     top:10px;
     font-size:32px;
@@ -108,8 +104,8 @@ input{
 }
 #close{right:10px;}
 #back{right:50px;display:none;}
+#loader-close{right:10px; display:none;}
 
-/* ===== LOADER ===== */
 #loader{
     position:fixed;
     inset:0;
@@ -158,6 +154,7 @@ input{
 </div>
 
 <div id="loader">
+    <div id="loader-close">✖</div>
     🎬 Lade Video…
     <div id="progress-container">
         <div id="progress-bar"></div>
@@ -175,6 +172,7 @@ const progressBar=document.getElementById("progress-bar");
 const waitText=document.getElementById("wait-text");
 const closeBtn=document.getElementById("close");
 const backBtn=document.getElementById("back");
+const loaderClose=document.getElementById("loader-close");
 
 let currentSeries=null;
 let currentView="main";
@@ -211,6 +209,7 @@ function play(link){
     video.load();
 
     loader.style.display="flex";
+    loaderClose.style.display="block";
     progressBar.style.width="0%";
     waitText.style.display="none";
 
@@ -230,6 +229,7 @@ function play(link){
     video.oncanplay=()=>{
         clearInterval(fakeProgressInterval);
         loader.style.display="none";
+        loaderClose.style.display="none";
         video.style.visibility="visible";
         video.play();
     };
@@ -270,6 +270,7 @@ closeBtn.onclick=()=>{
     video.removeAttribute("src");
     player.style.display="none";
     loader.style.display="none";
+    loaderClose.style.display="none";
     clearInterval(fakeProgressInterval);
 };
 
@@ -278,6 +279,16 @@ backBtn.onclick=()=>{
     else render(search.value.toLowerCase());
 };
 
+// ================== LOADER X ==================
+loaderClose.onclick=()=>{
+    loader.style.display="none";
+    loaderClose.style.display="none";
+    clearInterval(fakeProgressInterval);
+    video.pause();
+    video.removeAttribute("src");
+};
+
+// ================== SUCHFELD ==================
 search.oninput=e=>render(e.target.value.toLowerCase());
 window.onload=()=>render();
 
