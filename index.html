@@ -2,10 +2,20 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Delay.Filme & Serien – MP4</title>
 
 <style>
+/* ===== GLOBAL FIX: KEIN HORIZONTAL SCROLL ===== */
+html, body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+    margin:0;
+    padding:0;
+}
+
+/* ===== DESIGN ===== */
 :root{
     --bg:#0a0614;
     --card:#140c26;
@@ -13,11 +23,11 @@
     --glow:#7a2cff;
 }
 body{
-    margin:0;
     background:var(--bg);
     color:#eee;
     font-family:Arial, sans-serif;
 }
+
 header{
     padding:20px;
     font-size:28px;
@@ -25,34 +35,47 @@ header{
     color:var(--purple);
     text-align:center;
 }
+
 input{
-    width:calc(100% - 50px);
-    margin:0 25px 20px;
+    width:calc(100% - 30px);
+    margin:0 15px 20px;
     padding:12px;
     font-size:16px;
     border-radius:8px;
     border:none;
     background:#1a1033;
     color:white;
+    box-sizing:border-box;
 }
+
+/* ===== GRID ===== */
 .grid{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
     gap:15px;
     padding:0 15px 50px;
+    box-sizing:border-box;
+    max-width:100vw;
 }
+
 .card{
     background:var(--card);
     border-radius:10px;
     overflow:hidden;
     cursor:pointer;
     transition:.25s;
+    max-width:100%;
+    box-sizing:border-box;
 }
 .card:hover{
     transform:scale(1.05);
     box-shadow:0 0 20px var(--glow);
 }
-.card img{width:100%;}
+.card img{
+    width:100%;
+    display:block;
+    max-width:100%;
+}
 .card p{
     margin:0;
     padding:8px;
@@ -60,6 +83,7 @@ input{
     font-size:14px;
 }
 
+/* ===== PLAYER ===== */
 #player{
     position:fixed;
     inset:0;
@@ -85,6 +109,7 @@ input{
 #close{right:10px;}
 #back{right:50px;display:none;}
 
+/* ===== LOADER ===== */
 #loader{
     position:fixed;
     inset:0;
@@ -141,19 +166,19 @@ input{
 </div>
 
 <script>
-const grid = document.getElementById("movies");
-const search = document.getElementById("search");
-const player = document.getElementById("player");
-const video = document.getElementById("video");
-const loader = document.getElementById("loader");
-const progressBar = document.getElementById("progress-bar");
-const waitText = document.getElementById("wait-text");
-const closeBtn = document.getElementById("close");
-const backBtn = document.getElementById("back");
+const grid=document.getElementById("movies");
+const search=document.getElementById("search");
+const player=document.getElementById("player");
+const video=document.getElementById("video");
+const loader=document.getElementById("loader");
+const progressBar=document.getElementById("progress-bar");
+const waitText=document.getElementById("wait-text");
+const closeBtn=document.getElementById("close");
+const backBtn=document.getElementById("back");
 
-let currentSeries = null;
-let currentView = "main";
-let fakeProgressInterval = null;
+let currentSeries=null;
+let currentView="main";
+let fakeProgressInterval=null;
 
 // ================== RENDER ==================
 function render(filter=""){
