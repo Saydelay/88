@@ -180,6 +180,16 @@ let fakeProgressInterval=null;
 
 // ================== RENDER ==================
 function render(filter=""){
+    // Immer alles abbrechen beim Hauptmenü
+    if(video.src){
+        video.pause();
+        video.removeAttribute("src");
+    }
+    loader.style.display="none";
+    loaderClose.style.display="none";
+    clearInterval(fakeProgressInterval);
+    waitText.style.display="none";
+
     grid.innerHTML="";
     backBtn.style.display="none";
     currentView="main";
@@ -280,12 +290,13 @@ backBtn.onclick=()=>{
 };
 
 // ================== LOADER X ==================
-loaderClose.onclick=()=>{
+loaderClose.onclick = () => {
     loader.style.display="none";
     loaderClose.style.display="none";
     clearInterval(fakeProgressInterval);
     video.pause();
     video.removeAttribute("src");
+    waitText.style.display="none";
 };
 
 // ================== SUCHFELD ==================
@@ -474,7 +485,6 @@ const series = [
         ]
     }
 ];
- 
 </script>
 
 </body>
