@@ -131,7 +131,7 @@ input{
     height:100%;
     background:var(--purple);
     border-radius:8px;
-    transition:width 0.2s;
+    transition:width 0.1s;
 }
 
 @media (max-width:768px){
@@ -163,50 +163,6 @@ input{
 </div>
 
 <script>
-// ================== FILME ==================
-const movies = [
-    {
-        name: "Zoomania",
-        cover: "Zoomania.jpg",
-        link: "https://archive.org/download/zoomania-fast/Zoomania_fast.mp4"
-    },
-    {
-        name: "Zoomania 2",
-        cover: "Zoomania 2.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World",
-        cover: "Jurassic World.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World Das gefallene Königreich",
-        cover: "Jurassic World Das gefallene Königreich.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Jurassic World Die Wiedergeburt",
-        cover: "Jurassic World Die Wiedergeburt.jpg",
-        link: "https://archive.org/download/jurassic-world-die-wiedergeburt-fast/Jurassic_World_Die_Wiedergeburt_fast.mp4"
-    },
-    {
-        name: "Fack ju Göhte",
-        cover: "Fack ju Göhte.jpg",
-        link: "https://archive.org/download/fack-ju-gohte/Fack%20ju%20G%C3%B6hte.mp4"
-    },
-    {
-        name: "Fack ju Göhte 2",
-        cover: "Fack ju Göhte 2.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-    {
-        name: "Fack ju Göhte 3",
-        cover: "Fack ju Göhte 3.jpg",
-        link: "https://archive.org/download/Zoomania/Zoomania.mp4"
-    },
-];
-
 // ================== SERIEN ==================
 const series = [
     {
@@ -345,6 +301,7 @@ const series = [
         ]
     }
 ];
+
 // ================== LOGIK ==================
 const grid=document.getElementById("movies");
 const search=document.getElementById("search");
@@ -357,6 +314,7 @@ const progressBar=document.getElementById("progress-bar");
 
 let currentSeries=null;
 let currentView="main";
+let fakeProgressInterval=null;
 
 function render(filter=""){
     grid.innerHTML="";
@@ -380,52 +338,37 @@ function render(filter=""){
     });
 }
 
-// Video abspielen mit Ladebildschirm + Fortschrittsbalken + Fehlerhandling
+// Video abspielen mit Fake-Ladebildschirm 30 Sekunden
 function play(link){
     document.body.style.overflow="hidden";
-    loader.style.display="flex";
-    progressBar.style.width="0%";
     player.style.display="flex";
     video.style.visibility="hidden";
     video.pause();
     video.src = link;
     video.load();
 
-    let timeout = setTimeout(()=>{
-        loader.style.display="none";
-        video.style.visibility="hidden";
-        alert("Video konnte nicht geladen werden.");
-    }, 15000); // 15 Sekunden Timeout
+    loader.style.display="flex";
+    progressBar.style.width="0%";
 
-    function updateProgress(){
-        if(video.buffered.length>0){
-            const bufferedEnd = video.buffered.end(video.buffered.length-1);
-            const duration = video.duration;
-            const percent = duration ? (bufferedEnd/duration)*100 : 0;
-            progressBar.style.width = percent + '%';
-        }
-    }
+    let progress = 0;
+    clearInterval(fakeProgressInterval);
+    fakeProgressInterval = setInterval(()=>{
+        progress += Math.random()*2; // Zufälliger Fortschritt
+        if(progress>100) progress=100;
+        progressBar.style.width = progress + "%";
+    }, 300);
 
-    function startVideo(){
-        clearTimeout(timeout);
-        video.removeEventListener('canplay', startVideo);
-        video.removeEventListener('progress', updateProgress);
-        video.removeEventListener('error', errorHandler);
+    let maxTimeout = setTimeout(endLoader, 30000); // max 30 Sekunden
+
+    video.oncanplay = () => endLoader();
+
+    function endLoader(){
+        clearInterval(fakeProgressInterval);
+        clearTimeout(maxTimeout);
         loader.style.display="none";
         video.style.visibility="visible";
         video.play().catch(()=>{});
     }
-
-    function errorHandler(){
-        clearTimeout(timeout);
-        loader.style.display="none";
-        video.style.visibility="hidden";
-        alert("Fehler beim Laden des Videos.");
-    }
-
-    video.addEventListener('progress', updateProgress);
-    video.addEventListener('canplay', startVideo);
-    video.addEventListener('error', errorHandler);
 }
 
 // Serien-Funktionen
@@ -464,6 +407,7 @@ closeBtn.onclick = ()=>{
     loader.style.display="none";
     progressBar.style.width="0%";
     document.body.style.overflow="auto";
+    clearInterval(fakeProgressInterval);
 };
 
 backBtn.onclick = ()=>{
@@ -471,8 +415,17 @@ backBtn.onclick = ()=>{
     else render(search.value.toLowerCase());
 };
 
+// Suchfeld
 search.oninput = e=>render(e.target.value.toLowerCase());
-render();
+
+// Hauptmenü beim Laden
+window.onload = ()=>{
+    player.style.display="none";
+    loader.style.display="none";
+    backBtn.style.display="none";
+    document.body.style.overflow="auto";
+    render();
+};
 </script>
 
 </body>
