@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Delay.Filme & Serien</title>
+<title>Delay.Filme & Serien – MP4</title>
 
 <style>
 :root{
@@ -17,7 +17,6 @@ body{
     background:var(--bg);
     color:#eee;
     font-family:Arial, sans-serif;
-    overflow-x:hidden;
 }
 header{
     padding:25px;
@@ -75,31 +74,18 @@ input{
 #player video{
     width:100%;
     height:100%;
-}
-
-#loading{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:var(--purple);
-    font-size:18px;
     background:black;
+    visibility:hidden; /* Video erst sichtbar, wenn geladen */
 }
 
-#close,#back{
+#close{
     position:fixed;
     top:12px;
-    right:6px;
-    font-size:30px;
+    right:12px;
+    font-size:32px;
     color:var(--purple);
     cursor:pointer;
     z-index:1010;
-}
-#back{
-    right:20px;
-    display:none;
 }
 </style>
 </head>
@@ -108,12 +94,10 @@ input{
 
 <header>🎬 Delay.Filme & Serien</header>
 <input type="text" placeholder="Suchen..." id="search">
-<div id="back">✖</div>
 <div class="grid" id="movies"></div>
 
 <div id="player">
     <div id="close">✖</div>
-    <div id="loading">Lade Video…</div>
     <video id="video" controls playsinline preload="metadata"></video>
 </div>
 
@@ -306,18 +290,10 @@ const grid=document.getElementById("movies");
 const search=document.getElementById("search");
 const player=document.getElementById("player");
 const video=document.getElementById("video");
-const backBtn=document.getElementById("back");
-const loading=document.getElementById("loading");
-
-let currentSeries=null;
-let currentView="main";
-let searchTimer;
+const closeBtn=document.getElementById("close");
 
 function render(filter=""){
     grid.innerHTML="";
-    backBtn.style.display="none";
-    currentView="main";
-
     movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
         const c=document.createElement("div");
         c.className="card";
@@ -325,71 +301,28 @@ function render(filter=""){
         c.onclick=()=>play(m.link);
         grid.appendChild(c);
     });
-
-    series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
-        c.onclick=()=>showSeasons(s);
-        grid.appendChild(c);
-    });
 }
 
 function play(link){
     player.style.display="block";
-    loading.style.display="flex";
-    if(video.src!==link){
-        video.src=link;
-        video.load();
-    }
+    video.style.visibility="hidden"; // unsichtbar bis geladen
+    video.pause();
+    video.src = link;
+    video.load();
+    video.oncanplay = () => {
+        video.style.visibility="visible"; // jetzt sichtbar
+        video.play().catch(()=>{});
+    };
 }
 
-function showSeasons(s){
-    currentSeries=s;
-    currentView="seasons";
-    backBtn.style.display="block";
-    grid.innerHTML="";
-    s.seasons.forEach(se=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
-        c.onclick=()=>showEpisodes(se);
-        grid.appendChild(c);
-    });
-}
-
-function showEpisodes(se){
-    currentView="episodes";
-    grid.innerHTML="";
-    se.episodes.forEach(ep=>{
-        const c=document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<img loading="lazy" decoding="async" src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
-        c.onclick=()=>play(ep.link);
-        grid.appendChild(c);
-    });
-}
-
-video.addEventListener("canplay",()=>loading.style.display="none");
-video.addEventListener("waiting",()=>loading.style.display="flex");
-
-document.getElementById("close").onclick=()=>{
+closeBtn.onclick = ()=>{
     video.pause();
     video.removeAttribute("src");
     video.load();
     player.style.display="none";
 };
 
-backBtn.onclick=()=>{
-    if(currentView==="episodes") showSeasons(currentSeries);
-    else render(search.value.toLowerCase());
-};
-
-search.oninput=e=>{
-    clearTimeout(searchTimer);
-    searchTimer=setTimeout(()=>render(e.target.value.toLowerCase()),200);
-};
-
+search.oninput = e=>render(e.target.value.toLowerCase());
 render();
 </script>
 
