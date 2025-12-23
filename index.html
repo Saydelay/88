@@ -178,17 +178,25 @@ let currentSeries=null;
 let currentView="main";
 let fakeProgressInterval=null;
 
-// ================== RENDER ==================
-function render(filter=""){
-    // Immer alles abbrechen beim Hauptmenü
+// ================== STOP ALL FUNCTION ==================
+function stopAll() {
+    // Video stoppen
     if(video.src){
         video.pause();
         video.removeAttribute("src");
     }
+    // Player & Loader ausblenden
+    player.style.display="none";
     loader.style.display="none";
     loaderClose.style.display="none";
+    // Progress-Interval stoppen
     clearInterval(fakeProgressInterval);
     waitText.style.display="none";
+}
+
+// ================== RENDER ==================
+function render(filter=""){
+    stopAll(); // Immer alles stoppen beim Hauptmenü
 
     grid.innerHTML="";
     backBtn.style.display="none";
@@ -275,28 +283,12 @@ function showEpisodes(se){
 }
 
 // ================== BUTTONS ==================
-closeBtn.onclick=()=>{
-    video.pause();
-    video.removeAttribute("src");
-    player.style.display="none";
-    loader.style.display="none";
-    loaderClose.style.display="none";
-    clearInterval(fakeProgressInterval);
-};
+closeBtn.onclick = stopAll;
+loaderClose.onclick = stopAll;
 
 backBtn.onclick=()=>{
     if(currentView==="episodes") showSeasons(currentSeries);
     else render(search.value.toLowerCase());
-};
-
-// ================== LOADER X ==================
-loaderClose.onclick = () => {
-    loader.style.display="none";
-    loaderClose.style.display="none";
-    clearInterval(fakeProgressInterval);
-    video.pause();
-    video.removeAttribute("src");
-    waitText.style.display="none";
 };
 
 // ================== SUCHFELD ==================
