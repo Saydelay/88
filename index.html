@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Delay.Filme & Serien</title>
 
 <style>
@@ -16,7 +17,7 @@ body{
     background:var(--bg);
     color:#eee;
     font-family:Arial, sans-serif;
-    overflow-x:hidden; /* verhindert horizontalen Scroll */
+    overflow-x:hidden;
 }
 header{
     padding:25px;
@@ -36,28 +37,31 @@ input{
 }
 .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
     gap:18px;
-    padding:0 25px 50px;
+    padding:0 25px 60px;
 }
 .card{
     background:var(--card);
     border-radius:10px;
     overflow:hidden;
     cursor:pointer;
-    transition:.3s;
+    transition:.25s;
 }
 .card:hover{
-    transform:scale(1.12);
-    box-shadow:0 0 25px var(--glow);
-    z-index:10;
+    transform:scale(1.08);
+    box-shadow:0 0 20px var(--glow);
 }
-.card img{ width:100%; }
+.card img{
+    width:100%;
+    display:block;
+}
 .card p{
     margin:0;
     padding:10px;
     text-align:center;
 }
+
 #player{
     position:fixed;
     inset:0;
@@ -68,23 +72,20 @@ input{
 #player video{
     width:100%;
     height:100%;
-    z-index:1000;
 }
-#close, #back{
-    position:fixed; /* fixiert in der Ecke */
-    top:10px;
-    font-size:32px;
+
+#close,#back{
+    position:fixed;
+    top:12px;
+    right:6px;
+    font-size:30px;
     color:var(--purple);
     cursor:pointer;
     z-index:1010;
-    pointer-events:auto;
-}
-#close{
-    right:20px;
 }
 #back{
     right:20px; /* etwas links vom Video-X */
-    display:none;
+    
 }
 </style>
 </head>
@@ -98,7 +99,7 @@ input{
 
 <div id="player">
     <div id="close">✖</div>
-    <video id="video" controls autoplay></video>
+    <video id="video" controls playsinline preload="metadata"></video>
 </div>
 
 <script>
@@ -303,7 +304,7 @@ function render(filter=""){
     movies.filter(m=>m.name.toLowerCase().includes(filter)).forEach(m=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img src="files/covers/${m.cover}"><p>${m.name}</p>`;
+        c.innerHTML=`<img loading="lazy" src="files/covers/${m.cover}"><p>${m.name}</p>`;
         c.onclick=()=>play(m.link);
         grid.appendChild(c);
     });
@@ -311,16 +312,16 @@ function render(filter=""){
     series.filter(s=>s.name.toLowerCase().includes(filter)).forEach(s=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
+        c.innerHTML=`<img loading="lazy" src="files/covers/${s.seasons[0].episodes[0].cover}"><p>${s.name}</p>`;
         c.onclick=()=>showSeasons(s);
         grid.appendChild(c);
     });
 }
 
 function play(link){
-    video.src=link;
     player.style.display="block";
-    video.play();
+    video.src = link;
+    video.load();
 }
 
 function showSeasons(s){
@@ -331,7 +332,7 @@ function showSeasons(s){
     s.seasons.forEach(se=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
+        c.innerHTML=`<img loading="lazy" src="files/covers/${se.episodes[0].cover}"><p>Staffel ${se.season}</p>`;
         c.onclick=()=>showEpisodes(se);
         grid.appendChild(c);
     });
@@ -343,7 +344,7 @@ function showEpisodes(se){
     se.episodes.forEach(ep=>{
         const c=document.createElement("div");
         c.className="card";
-        c.innerHTML=`<img src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
+        c.innerHTML=`<img loading="lazy" src="files/covers/${ep.cover}"><p>${ep.name}</p>`;
         c.onclick=()=>play(ep.link);
         grid.appendChild(c);
     });
@@ -351,7 +352,8 @@ function showEpisodes(se){
 
 document.getElementById("close").onclick=()=>{
     video.pause();
-    video.src="";
+    video.removeAttribute("src");
+    video.load();
     player.style.display="none";
 };
 
