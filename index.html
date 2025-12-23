@@ -345,7 +345,6 @@ const series = [
         ]
     }
 ];
-
 // ================== LOGIK ==================
 const grid=document.getElementById("movies");
 const search=document.getElementById("search");
@@ -359,7 +358,6 @@ const progressBar=document.getElementById("progress-bar");
 let currentSeries=null;
 let currentView="main";
 
-// Render Funktion
 function render(filter=""){
     grid.innerHTML="";
     backBtn.style.display="none";
@@ -382,7 +380,7 @@ function render(filter=""){
     });
 }
 
-// Video abspielen mit Ladebildschirm + Fortschrittsbalken
+// Video abspielen mit Ladebildschirm + Fortschrittsbalken + Fehlerhandling
 function play(link){
     document.body.style.overflow="hidden";
     loader.style.display="flex";
@@ -390,28 +388,44 @@ function play(link){
     player.style.display="flex";
     video.style.visibility="hidden";
     video.pause();
-    video.src=link;
+    video.src = link;
     video.load();
+
+    let timeout = setTimeout(()=>{
+        loader.style.display="none";
+        video.style.visibility="hidden";
+        alert("Video konnte nicht geladen werden.");
+    }, 15000); // 15 Sekunden Timeout
+
+    function updateProgress(){
+        if(video.buffered.length>0){
+            const bufferedEnd = video.buffered.end(video.buffered.length-1);
+            const duration = video.duration;
+            const percent = duration ? (bufferedEnd/duration)*100 : 0;
+            progressBar.style.width = percent + '%';
+        }
+    }
+
+    function startVideo(){
+        clearTimeout(timeout);
+        video.removeEventListener('canplay', startVideo);
+        video.removeEventListener('progress', updateProgress);
+        video.removeEventListener('error', errorHandler);
+        loader.style.display="none";
+        video.style.visibility="visible";
+        video.play().catch(()=>{});
+    }
+
+    function errorHandler(){
+        clearTimeout(timeout);
+        loader.style.display="none";
+        video.style.visibility="hidden";
+        alert("Fehler beim Laden des Videos.");
+    }
 
     video.addEventListener('progress', updateProgress);
     video.addEventListener('canplay', startVideo);
-}
-
-function updateProgress(){
-    if(video.buffered.length>0){
-        const bufferedEnd=video.buffered.end(video.buffered.length-1);
-        const duration=video.duration;
-        const percent = duration ? (bufferedEnd/duration)*100 : 0;
-        progressBar.style.width = percent + '%';
-    }
-}
-
-function startVideo(){
-    video.removeEventListener('canplay', startVideo);
-    video.removeEventListener('progress', updateProgress);
-    loader.style.display="none";
-    video.style.visibility="visible";
-    video.play().catch(()=>{});
+    video.addEventListener('error', errorHandler);
 }
 
 // Serien-Funktionen
