@@ -287,6 +287,14 @@
         .p-spin.show { display: block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Touch-Geräte: Leiste ÜBER dem Video statt darauf -> keine Überlappung mit Apple/Android-Steuerung */
+        @media (hover: none), (pointer: coarse) {
+            #player.open { display: flex; flex-direction: column; }
+            #player .p-top { order: -1; position: relative; flex: 0 0 auto; background: #000; padding-bottom: 12px; }
+            #player.idle .p-top { opacity: 1; pointer-events: auto; }
+            #player video { position: relative; inset: auto; flex: 1 1 auto; height: 0; min-height: 0; width: 100%; }
+        }
+
         /* ---------- Toast ---------- */
         #toast { position: fixed; left: 50%; bottom: calc(24px + var(--safe-b)); z-index: 4000; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; padding: 12px 20px; border-radius: 14px; background: rgba(30,16,50,.95); border: 1px solid rgba(181,107,255,.4); font-size: 14px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,.6); transition: all .35s cubic-bezier(.2,.8,.2,1); white-space: nowrap; }
         #toast.show { transform: translate(-50%, 0); opacity: 1; }
@@ -776,6 +784,9 @@ function refresh() {
 
 /* ---------- Player ---------- */
 const video = $('video');
+// iPhone: Filme direkt im echten Apple-Vollbild-Player abspielen
+const IS_IPHONE = /iPhone|iPod/.test(navigator.userAgent);
+if (IS_IPHONE) video.removeAttribute('playsinline');
 let playing = null, lastSave = 0, idleTimer;
 
 function neighbour(id) {
@@ -833,7 +844,14 @@ video.addEventListener('ended', () => {
     if (!playing) return;
     progress[playing.id] = { ...(progress[playing.id] || {}), t: 0, done: true, ts: Date.now() }; saveProgress();
     const nx = neighbour(playing.id);
-    if (nx) { toast('Nächste Folge startet…'); setTimeout(() => playing && playId(nx.id, true), 2500); }
+    if (nx && !IS_IPHONE) { toast('Nächste Folge startet…'); setTimeout(() => playing && playId(nx.id, true), 2500); }
+});
+
+// iPhone: "Fertig" im Apple-Player -> zurück zur Seite (außer eine Folge ist zu Ende, dann "Nächste Folge" anbieten)
+video.addEventListener('webkitendfullscreen', () => {
+    if (!IS_IPHONE || !playing) return;
+    if (video.ended && neighbour(playing.id)) { saveNow(); toast('Tippe auf „Nächste Folge“'); return; }
+    closePlayer();
 });
 video.addEventListener('error', () => {
     $('p-msg').innerHTML = '⚠️ Das Video kann nicht abgespielt werden.<br><small>Am besten als MP4 (H.264 + AAC) speichern – siehe Anleitung.</small>';
