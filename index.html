@@ -1,3 +1,32 @@
+Claude
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Index · HTML
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -29,7 +58,7 @@
             --safe-l: env(safe-area-inset-left, 0px);
             --safe-r: env(safe-area-inset-right, 0px);
         }
-
+ 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             margin: 0; background: var(--bg); color: var(--text);
@@ -37,7 +66,7 @@
             -webkit-font-smoothing: antialiased; min-height: 100vh; overflow-x: hidden;
         }
         body.locked { overflow: hidden; }
-
+ 
         /* ---------- Hintergrund ---------- */
         .bg-fx { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
         .bg-fx::before, .bg-fx::after {
@@ -47,7 +76,7 @@
         .bg-fx::before { width: 60vw; height: 60vw; max-width: 800px; max-height: 800px; background: #3b1270; top: -25vw; left: -10vw; }
         .bg-fx::after  { width: 45vw; height: 45vw; max-width: 600px; max-height: 600px; background: #5a0f4f; top: -10vw; right: -15vw; animation-delay: -9s; }
         @keyframes float { to { transform: translate(6vw, 4vw) scale(1.1); } }
-
+ 
         /* ---------- Header ---------- */
         .topbar {
             position: sticky; top: 0; z-index: 100;
@@ -79,7 +108,7 @@
             border-radius: 50%; border: 0; background: var(--surface-2); color: #fff; cursor: pointer; display: none; font-size: 14px;
         }
         #search-clear.show { display: block; }
-
+ 
         /* ---------- Layout ---------- */
         main {
             position: relative; z-index: 2; max-width: 1400px; margin: 0 auto;
@@ -96,11 +125,11 @@
         .chip.active { color: #fff; background: linear-gradient(135deg, var(--purple-2), var(--purple)); border-color: transparent; box-shadow: 0 6px 22px var(--glow); }
         .chip .count { opacity: .65; margin-left: 6px; font-weight: 500; }
         .result-info { color: var(--muted); font-size: 14px; }
-
+ 
         .section { margin-bottom: 40px; }
         .section-title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
         .section-title::before { content: ""; width: 4px; height: 20px; border-radius: 4px; background: linear-gradient(var(--purple), var(--pink)); }
-
+ 
         /* Weiterschauen: horizontale Reihe */
         .row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 320px); gap: 18px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 10px; scroll-snap-type: x mandatory; }
         .row::-webkit-scrollbar { display: none; }
@@ -116,7 +145,7 @@
         .cw-sub { font-size: 12.5px; color: var(--muted); margin: 3px 0 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.15); overflow: hidden; }
         .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--purple), var(--pink)); border-radius: 4px; }
-
+ 
         /* ---------- Grid ---------- */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 24px; }
         .card { position: relative; cursor: pointer; border-radius: var(--radius); outline: none; opacity: 0; transform: translateY(14px); animation: in .5s cubic-bezier(.2,.8,.2,1) forwards; }
@@ -147,15 +176,15 @@
         }
         .card:focus-visible .poster { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple); }
         .card:active .poster { transform: scale(.97); }
-
+ 
         .empty { text-align: center; padding: 80px 20px; color: var(--muted); line-height: 1.6; }
         .empty .big { font-size: 46px; margin-bottom: 10px; }
         .empty code { background: var(--surface-2); padding: 2px 8px; border-radius: 6px; color: #fff; }
-
+ 
         /* Lade-Skeleton */
         .skel { aspect-ratio: 2/3; border-radius: var(--radius); background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%); background-size: 200% 100%; animation: sk 1.3s infinite; }
         @keyframes sk { to { background-position: -200% 0; } }
-
+ 
         /* ---------- Detail ---------- */
         #detail { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 30px; visibility: hidden; pointer-events: none; }
         #detail.open { visibility: visible; pointer-events: auto; }
@@ -216,7 +245,7 @@
         .ep-check { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: transparent; color: transparent; cursor: pointer; font-size: 15px; font-weight: 900; display: grid; place-items: center; transition: all .25s; }
         .ep-check:hover { border-color: var(--green); color: rgba(62,224,143,.6); }
         .ep.watched .ep-check { background: var(--green); border-color: var(--green); color: #05230f; }
-
+ 
         /* ---------- Player ---------- */
         #player { position: fixed; inset: 0; z-index: 3000; background: #000; display: none; }
         #player.open { display: block; }
@@ -234,14 +263,61 @@
         #p-next { display: none; }
         #p-next.show { display: block; }
         .p-msg { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; color: rgba(255,255,255,.85); max-width: 420px; padding: 20px; line-height: 1.6; display: none; }
-
+ 
+        /* ---------- Sperrbildschirm ---------- */
+        #lock {
+            position: fixed; inset: 0; z-index: 5000; display: none; align-items: center; justify-content: center;
+            padding: 24px calc(24px + var(--safe-r)) calc(24px + var(--safe-b)) calc(24px + var(--safe-l));
+            background: radial-gradient(circle at 30% 20%, #3b1270 0%, transparent 55%), radial-gradient(circle at 80% 90%, #5a0f4f 0%, transparent 50%), var(--bg);
+        }
+        #lock.show { display: flex; animation: fade .4s ease; }
+        @keyframes fade { from { opacity: 0; } }
+        body.is-locked { overflow: hidden; }
+        .lock-box {
+            width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+            padding: 38px 28px 30px; border-radius: 28px; text-align: center;
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 40px 100px rgba(0,0,0,.6);
+        }
+        .lock-logo {
+            font-size: 34px; font-weight: 900; letter-spacing: -1.2px;
+            background: linear-gradient(90deg, #fff 0%, var(--purple) 55%, var(--pink) 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .lock-logo span { -webkit-text-fill-color: var(--purple); }
+        .lock-icon {
+            width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; margin: 4px 0 6px;
+            background: linear-gradient(135deg, var(--purple-2), var(--purple)); box-shadow: 0 10px 40px var(--glow);
+        }
+        .lock-icon svg { width: 28px; height: 28px; color: #fff; }
+        #lock-pw {
+            width: 100%; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.07);
+            color: #fff; font: inherit; font-size: 18px; text-align: center; letter-spacing: 3px; transition: border-color .25s, box-shadow .25s;
+        }
+        #lock-pw::placeholder { letter-spacing: 0; color: var(--muted); font-size: 16px; }
+        #lock-pw:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 4px rgba(181,107,255,.18), 0 0 30px var(--glow); }
+        #lock-btn { width: 100%; justify-content: center; padding: 15px; font-size: 16px; }
+        #lock-btn:disabled { opacity: .7; cursor: default; }
+        #lock-msg { min-height: 20px; font-size: 14px; color: var(--muted); }
+        #lock-msg.err { color: #ff6b8b; }
+        .shake { animation: shake .45s; }
+        @keyframes shake { 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+ 
+        .lock-out {
+            flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2);
+            color: #fff; cursor: pointer; display: grid; place-items: center; transition: all .25s;
+        }
+        .lock-out:hover { border-color: var(--purple); background: rgba(181,107,255,.15); }
+        .lock-out svg { width: 19px; height: 19px; }
+        @media (max-width: 640px) { .lock-out { width: 40px; height: 40px; margin-left: auto; } }
+ 
         /* ---------- Toast ---------- */
         #toast { position: fixed; left: 50%; bottom: calc(24px + var(--safe-b)); z-index: 4000; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; padding: 12px 20px; border-radius: 14px; background: rgba(30,16,50,.95); border: 1px solid rgba(181,107,255,.4); font-size: 14px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,.6); transition: all .35s cubic-bezier(.2,.8,.2,1); white-space: nowrap; }
         #toast.show { transform: translate(-50%, 0); opacity: 1; }
-
+ 
         /* ---------- iPad ---------- */
         @media (max-width: 1024px) { .grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 20px; } }
-
+ 
         /* ---------- Handy ---------- */
         @media (max-width: 640px) {
             .topbar-inner { flex-wrap: wrap; gap: 12px; }
@@ -285,9 +361,9 @@
     </style>
 </head>
 <body>
-
+ 
 <div class="bg-fx"></div>
-
+ 
 <header class="topbar">
     <div class="topbar-inner">
         <h1 class="logo" onclick="resetAll()">SAYDELAY<span>.</span></h1>
@@ -296,9 +372,12 @@
             <input type="search" id="search" placeholder="Filme oder Serien suchen…" autocomplete="off" enterkeyhint="search">
             <button id="search-clear" aria-label="Suche leeren">✕</button>
         </div>
+        <button class="lock-out" onclick="logout()" title="Sperren" aria-label="Sperren">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+        </button>
     </div>
 </header>
-
+ 
 <main>
     <div class="toolbar">
         <div class="chips" id="filters"></div>
@@ -310,7 +389,7 @@
         </div>
     </div>
 </main>
-
+ 
 <div id="detail" aria-hidden="true">
     <div class="backdrop" onclick="closeDetail()"></div>
     <div class="sheet" role="dialog" aria-modal="true">
@@ -322,7 +401,7 @@
         </div>
     </div>
 </div>
-
+ 
 <div id="player">
     <video id="video" controls playsinline preload="metadata"></video>
     <div class="p-top">
@@ -332,14 +411,27 @@
     </div>
     <div class="p-msg" id="p-msg"></div>
 </div>
-
+ 
 <div id="toast"></div>
-
+ 
+<div id="lock">
+    <form class="lock-box" id="lock-form" autocomplete="on">
+        <div class="lock-logo">SAYDELAY<span>.</span></div>
+        <div class="lock-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+        </div>
+        <input type="text" name="username" value="saydelay" autocomplete="username" hidden>
+        <input type="password" id="lock-pw" placeholder="Passwort" autocomplete="current-password" enterkeyhint="go">
+        <button class="btn" id="lock-btn" type="submit">Entsperren</button>
+        <div id="lock-msg"></div>
+    </form>
+</div>
+ 
 <script>
 /* =====================================================================
    SAYDELAY – liest die Filme automatisch vom Raspberry Pi.
    Ordner-Aufbau (im Netzwerkordner "Filme"):
-
+ 
      Filme/
         Iron Man.mp4
         Iron Man.jpg            <- Cover: gleicher Name wie der Film
@@ -356,13 +448,13 @@
            Staffel 7/
               ...
    ===================================================================== */
-
+ 
 /* Adresse deines Pis (steht am Ende vom Setup). Kann auch direkt auf der Seite eingegeben werden. */
-const PI_URL_DEFAULT = '';   // z.B. 'https://sadelay.tail1234.ts.net'
-
+const PI_URL_DEFAULT = 'https://saydelay.tail9240f2.ts.net';
+ 
 const ON_PI = !/github\.io$/i.test(location.hostname) && location.protocol !== 'file:';
 const store = { get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
-
+ 
 // Einmal-Link:  saydelay.github.io/#pi=https://...&k=SCHLUESSEL  -> speichern und aus der Adresse entfernen
 (function () {
     const h = new URLSearchParams(location.hash.slice(1));
@@ -370,7 +462,7 @@ const store = { get: k => { try { return localStorage.getItem(k) || ''; } catch 
     if (h.get('k')) store.set('saydelay_key', h.get('k').trim());
     if (h.get('pi') || h.get('k')) history.replaceState(null, '', location.pathname + location.search);
 })();
-
+ 
 function piUrl() { return (store.get('saydelay_pi') || PI_URL_DEFAULT).trim().replace(/\/+$/, ''); }
 const keyQ = () => store.get('saydelay_key') ? '?k=' + encodeURIComponent(store.get('saydelay_key')) : '';
 let MEDIA = ON_PI ? 'media/' : (piUrl() ? piUrl() + '/media/' : '');
@@ -378,7 +470,7 @@ const NEW_DAYS = 7;   // "NEU"-Badge für Dateien, die jünger als X Tage sind
 const VIDEO_RE = /\.(mp4|m4v|webm|mov)$/i;
 const IMG_RE = /\.(jpe?g|png|webp)$/i;
 const POSTER_NAMES = ['poster', 'cover', 'folder', 'thumb'];
-
+ 
 /* ---------- Helfer ---------- */
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -387,14 +479,14 @@ const url = p => MEDIA + enc(p) + keyQ();
 const stripExt = n => n.replace(/\.[^.]+$/, '');
 const natural = (a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' });
 const fmtTime = s => { s = Math.floor(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
-
+ 
 async function list(path) {
     const r = await fetch(MEDIA + (path ? enc(path) + '/' : '') + keyQ(), { cache: 'no-store' });
     if (r.status === 403) throw new Error('KEY');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return (await r.json()).filter(e => !e.name.startsWith('.'));
 }
-
+ 
 function findPoster(entries, base, dir) {
     const imgs = entries.filter(e => e.type === 'file' && IMG_RE.test(e.name));
     let hit = base && imgs.find(e => stripExt(e.name).toLowerCase() === base.toLowerCase());
@@ -402,27 +494,27 @@ function findPoster(entries, base, dir) {
     if (!hit && dir) hit = imgs[0];
     return hit ? (dir ? dir + '/' : '') + hit.name : null;
 }
-
+ 
 function epTitle(file, i) {
     const base = stripExt(file);
     const m = base.match(/[sS]\d+\s*[eE](\d+)/) || base.match(/^(?:folge|episode|ep|e)?\s*0*(\d+)$/i);
     if (m) return 'Folge ' + parseInt(m[1], 10);
     return base;
 }
-
+ 
 function seasonNumber(name, i) { const m = name.match(/\d+/); return m ? parseInt(m[0], 10) : i + 1; }
 const isNew = mtime => mtime && (Date.now() - new Date(mtime).getTime()) < NEW_DAYS * 864e5;
-
+ 
 /* ---------- Bibliothek laden ---------- */
 let titles = [];
 const byId = {};   // Datei-Pfad -> { title, season, ep }
-
+ 
 async function loadLibrary() {
     const [filmEntries, serienEntries] = await Promise.all([
         list('Filme').catch(() => []),
         list('Serien').catch(() => []),
     ]);
-
+ 
     // Filme (lose Dateien + Ordner pro Film)
     const movies = [];
     filmEntries.filter(e => e.type === 'file' && VIDEO_RE.test(e.name)).forEach(e => {
@@ -437,7 +529,7 @@ async function loadLibrary() {
         if (!vid) return;
         movies.push({ type: 'movie', id: dir + '/' + vid.name, file: dir + '/' + vid.name, name: d.name, cover: findPoster(inner, stripExt(vid.name), dir), mtime: vid.mtime });
     }));
-
+ 
     // Serien
     const series = await Promise.all(serienEntries.filter(e => e.type === 'directory').map(async d => {
         const dir = 'Serien/' + d.name;
@@ -461,14 +553,14 @@ async function loadLibrary() {
         if (!filled.length) return null;
         return { type: 'series', name: d.name, cover: cover || filled[0].cover, seasons: filled, mtime: filled.flatMap(s => s.episodes).map(e => e.mtime).sort().pop() };
     }));
-
+ 
     titles = [...series.filter(Boolean), ...movies].sort((a, b) => natural(a.name, b.name));
     titles.forEach(t => {
         if (t.type === 'movie') byId[t.id] = { title: t };
         else t.seasons.forEach((s, si) => s.episodes.forEach((ep, ei) => byId[ep.id] = { title: t, si, ei }));
     });
 }
-
+ 
 /* ---------- Fortschritt (pro Gerät gespeichert) ---------- */
 let progress = {};
 try { progress = JSON.parse(localStorage.getItem('saydelay_progress')) || {}; } catch (e) {}
@@ -476,7 +568,7 @@ const saveProgress = () => { try { localStorage.setItem('saydelay_progress', JSO
 const isDone = id => !!(progress[id] && progress[id].done);
 const pct = id => { const p = progress[id]; return p && p.d ? Math.min(100, p.t / p.d * 100) : 0; };
 function setDone(id, v) { progress[id] = { ...(progress[id] || {}), done: v, t: v ? 0 : (progress[id] || {}).t || 0, ts: Date.now() }; saveProgress(); }
-
+ 
 function seriesStats(t) {
     const eps = t.seasons.flatMap(s => s.episodes);
     return { total: eps.length, done: eps.filter(e => isDone(e.id)).length };
@@ -488,7 +580,7 @@ function nextEpisode(t) {
     return started || eps.find(x => !isDone(x.e.id)) || null;
 }
 function isWatchedTitle(t) { if (t.type === 'movie') return isDone(t.id); const s = seriesStats(t); return s.done === s.total; }
-
+ 
 /* ---------- Bilder ---------- */
 function fallbackCover(name) {
     const words = name.split(' '); const lines = []; let line = '';
@@ -504,7 +596,7 @@ function imgTag(cover, name, extra = '') {
         onload="this.classList.add('loaded')"
         onerror="this.onerror=null;this.src='${fallbackCover(name).replace(/'/g, '%27')}';this.classList.add('loaded')">`;
 }
-
+ 
 /* ---------- Übersicht ---------- */
 let currentFilter = 'all';
 const filters = [
@@ -513,7 +605,7 @@ const filters = [
     { key: 'series', label: 'Serien' },
     { key: 'unwatched', label: 'Noch nicht gesehen' },
 ];
-
+ 
 function renderFilters() {
     const counts = {
         all: titles.length,
@@ -524,7 +616,7 @@ function renderFilters() {
     $('filters').innerHTML = filters.map(f => `<button class="chip ${currentFilter === f.key ? 'active' : ''}" data-f="${f.key}">${f.label}<span class="count">${counts[f.key]}</span></button>`).join('');
     $('filters').querySelectorAll('.chip').forEach(b => b.onclick = () => { currentFilter = b.dataset.f; render(); });
 }
-
+ 
 function cardHTML(t, i) {
     let badge, sub, extra = '';
     if (t.type === 'movie') {
@@ -552,7 +644,7 @@ function cardHTML(t, i) {
             <div class="card-meta"><p class="card-title">${esc(t.name)}</p><div class="card-sub">${sub}</div></div>
         </div>`;
 }
-
+ 
 function continueHTML() {
     const items = Object.entries(progress)
         .filter(([id, p]) => byId[id] && !p.done && p.t > 5 && p.d)
@@ -569,18 +661,18 @@ function continueHTML() {
         </div>`;
     }).join('')}</div></section>`;
 }
-
+ 
 function render() {
     const q = $('search').value.trim().toLowerCase();
     $('search-clear').classList.toggle('show', q.length > 0);
     renderFilters();
-
+ 
     let items = titles.filter(t => t.name.toLowerCase().includes(q));
     if (currentFilter === 'movie') items = items.filter(t => t.type === 'movie');
     if (currentFilter === 'series') items = items.filter(t => t.type === 'series');
     if (currentFilter === 'unwatched') items = items.filter(t => !isWatchedTitle(t));
     $('result-info').textContent = `${items.length} Titel`;
-
+ 
     const content = $('content');
     if (!titles.length) {
         content.innerHTML = `<div class="empty"><div class="big">📂</div>Noch keine Filme da.<br>Zieh deine Filme in den Netzwerkordner <code>Filme</code> → Unterordner <code>Filme</code> oder <code>Serien</code>.</div>`;
@@ -590,7 +682,7 @@ function render() {
         content.innerHTML = `<div class="empty"><div class="big">🔍</div>Nichts gefunden${q ? ` für „${esc(q)}“` : ''}.</div>`;
         return;
     }
-
+ 
     let html = '';
     if (!q && currentFilter === 'all') {
         html += continueHTML();
@@ -603,7 +695,7 @@ function render() {
         html = `<div class="grid">${items.map((t, i) => cardHTML(t, i)).join('')}</div>`;
     }
     content.innerHTML = html;
-
+ 
     content.querySelectorAll('.card').forEach(c => {
         const open = () => { const t = titles[+c.dataset.i]; t.type === 'movie' ? openMovie(t) : openSeries(t); };
         c.onclick = open;
@@ -611,11 +703,11 @@ function render() {
     });
     content.querySelectorAll('.cw').forEach(c => c.onclick = () => playId(c.dataset.id));
 }
-
+ 
 /* ---------- Detail ---------- */
 let currentTitle = null, currentSeason = 0;
 const playIcon = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-
+ 
 function openSheet() {
     $('detail').classList.add('open'); $('detail').setAttribute('aria-hidden', 'false');
     document.body.classList.add('locked'); $('sheet-scroll').scrollTop = 0;
@@ -627,13 +719,13 @@ function closeDetail(fromHistory) {
     document.body.classList.remove('locked'); currentTitle = null;
     if (!fromHistory) popLayer('detail');
 }
-
+ 
 function heroHTML(name, cover, tags, actions) {
     return `<div class="hero-bg" style="background-image:url('${esc(coverSrc(cover, name)).replace(/'/g, '%27')}')"></div>
         <div class="hero-poster">${imgTag(cover, name, 'class="loaded"')}</div>
         <div class="hero-info"><h2>${esc(name)}</h2><div class="hero-tags">${tags}</div><div class="actions">${actions}</div></div>`;
 }
-
+ 
 function openMovie(t) {
     currentTitle = t;
     const p = progress[t.id]; const done = isDone(t.id);
@@ -653,7 +745,7 @@ function openMovie(t) {
     $('a-toggle').onclick = () => { setDone(t.id, !done); refresh(); };
     if (!$('detail').classList.contains('open')) openSheet();
 }
-
+ 
 function openSeries(t, seasonIdx = null) {
     currentTitle = t;
     const nx = nextEpisode(t);
@@ -661,12 +753,12 @@ function openSeries(t, seasonIdx = null) {
     const season = t.seasons[currentSeason];
     const st = seriesStats(t);
     const resumeP = nx && progress[nx.e.id];
-
+ 
     $('hero').innerHTML = heroHTML(t.name, season.cover || t.cover,
         `<span class="tag purple">Serie</span><span class="tag">${t.seasons.length > 1 ? t.seasons.length + ' Staffeln' : 'Staffel ' + season.number}</span><span class="tag ${st.done === st.total ? 'green' : ''}">${st.done}/${st.total} gesehen</span>`,
         nx ? `<button class="btn" id="a-next">${playIcon}${resumeP && resumeP.t > 5 ? 'Weiterschauen' : st.done ? 'Weiter' : 'Abspielen'} · S${t.seasons[nx.si].number} ${esc(nx.e.title)}</button>` : '');
     if (nx) $('a-next').onclick = () => playId(nx.e.id);
-
+ 
     let body = '';
     if (t.seasons.length > 1) body += `<div class="seasons">${t.seasons.map((s, i) => `<button class="chip ${i === currentSeason ? 'active' : ''}" data-s="${i}">Staffel ${s.number}</button>`).join('')}</div>`;
     body += `<div class="ep-head"><span>${season.episodes.length} Folgen</span><span>${season.episodes.filter(e => isDone(e.id)).length} gesehen</span></div>`;
@@ -681,7 +773,7 @@ function openSeries(t, seasonIdx = null) {
         </div>`;
     }).join('')}</div>`;
     $('detail-body').innerHTML = body;
-
+ 
     $('detail-body').querySelectorAll('[data-s]').forEach(b => b.onclick = () => openSeries(t, +b.dataset.s));
     $('detail-body').querySelectorAll('.ep').forEach(row => {
         row.onclick = () => playId(row.dataset.id);
@@ -689,7 +781,7 @@ function openSeries(t, seasonIdx = null) {
     });
     if (!$('detail').classList.contains('open')) openSheet();
 }
-
+ 
 function refresh() {
     render();
     if (!currentTitle) return;
@@ -697,11 +789,11 @@ function refresh() {
     currentTitle.type === 'movie' ? openMovie(currentTitle) : openSeries(currentTitle, currentSeason);
     $('sheet-scroll').scrollTop = sc;
 }
-
+ 
 /* ---------- Player ---------- */
 const video = $('video');
 let playing = null, lastSave = 0, idleTimer;
-
+ 
 function neighbour(id) {
     const ref = byId[id]; if (!ref || ref.title.type !== 'series') return null;
     const t = ref.title; let { si, ei } = ref;
@@ -709,21 +801,21 @@ function neighbour(id) {
     if (si + 1 < t.seasons.length) return t.seasons[si + 1].episodes[0];
     return null;
 }
-
+ 
 function playId(id, fromStart = false) {
     const ref = byId[id]; if (!ref) return;
     const t = ref.title;
     let file, label, sub;
     if (t.type === 'movie') { file = t.file; label = t.name; sub = 'Film'; }
     else { const s = t.seasons[ref.si], e = s.episodes[ref.ei]; file = e.file; label = t.name; sub = `Staffel ${s.number} · ${e.title}`; }
-
+ 
     playing = { id };
     $('p-title').innerHTML = `${esc(label)}<small>${esc(sub)}</small>`;
     $('p-msg').style.display = 'none';
     const nx = neighbour(id);
     $('p-next').classList.toggle('show', !!nx);
     $('p-next').onclick = () => nx && playId(nx.id, true);
-
+ 
     const p = progress[id];
     const startAt = !fromStart && p && !p.done && p.t > 5 && p.d && p.t < p.d - 20 ? p.t : 0;
     video.src = url(file);
@@ -740,7 +832,7 @@ function playId(id, fromStart = false) {
     video.play().catch(() => {});
     poke();
 }
-
+ 
 function saveNow() {
     if (!playing || !video.duration) return;
     const id = playing.id, t = video.currentTime, d = video.duration;
@@ -748,7 +840,7 @@ function saveNow() {
     progress[id] = { t: done ? 0 : t, d, done: !!done, ts: Date.now() };
     saveProgress();
 }
-
+ 
 video.addEventListener('timeupdate', () => { if (Date.now() - lastSave > 4000) { lastSave = Date.now(); saveNow(); } });
 video.addEventListener('pause', saveNow);
 video.addEventListener('ended', () => {
@@ -761,7 +853,7 @@ video.addEventListener('error', () => {
     $('p-msg').innerHTML = '⚠️ Das Video kann nicht abgespielt werden.<br><small>Am besten als MP4 (H.264 + AAC) speichern – siehe Anleitung.</small>';
     $('p-msg').style.display = 'block';
 });
-
+ 
 function closePlayer(fromHistory) {
     if (!$('player').classList.contains('open')) return;
     saveNow();
@@ -772,7 +864,7 @@ function closePlayer(fromHistory) {
     if (!fromHistory) popLayer('player');
     refresh();
 }
-
+ 
 // Leiste oben ausblenden, wenn nichts passiert
 function poke() {
     $('player').classList.remove('idle'); clearTimeout(idleTimer);
@@ -780,7 +872,7 @@ function poke() {
 }
 ['mousemove', 'touchstart', 'click'].forEach(ev => $('player').addEventListener(ev, poke, { passive: true }));
 video.addEventListener('pause', poke);
-
+ 
 /* ---------- Zurück-Taste (Handy) ---------- */
 const layers = [];
 function pushLayer(name) { layers.push(name); history.pushState({ layer: name }, ''); }
@@ -790,7 +882,7 @@ window.addEventListener('popstate', () => {
     if (top === 'player') closePlayer(true);
     else if (top === 'detail') closeDetail(true);
 });
-
+ 
 /* ---------- Swipe nach unten zum Schließen ---------- */
 (function () {
     const sheet = document.querySelector('.sheet'); let startY = 0, dy = 0, dragging = false;
@@ -798,11 +890,11 @@ window.addEventListener('popstate', () => {
     sheet.addEventListener('touchmove', e => { if (!dragging) return; dy = Math.max(0, e.touches[0].clientY - startY); if (dy > 0) { sheet.style.transition = 'none'; sheet.style.transform = `translateY(${dy}px)`; } }, { passive: true });
     sheet.addEventListener('touchend', () => { if (!dragging) return; dragging = false; sheet.style.transition = ''; sheet.style.transform = ''; if (dy > 110) closeDetail(); });
 })();
-
+ 
 /* ---------- Toast ---------- */
 let toastTimer;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200); }
-
+ 
 /* ---------- Tastatur ---------- */
 document.addEventListener('keydown', e => {
     if ($('player').classList.contains('open')) {
@@ -816,44 +908,49 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeDetail();
     if (e.key === '/' && document.activeElement !== $('search')) { e.preventDefault(); $('search').focus(); }
 });
-
+ 
 /* ---------- Start ---------- */
 function resetAll() { $('search').value = ''; currentFilter = 'all'; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 $('search').addEventListener('input', render);
 $('search-clear').onclick = () => { $('search').value = ''; render(); $('search').focus(); };
 window.addEventListener('beforeunload', saveNow);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
-
-function showConnect(msg) {
-    const field = 'flex:1 1 100%;padding:13px 16px;border-radius:14px;border:1px solid var(--border);background:var(--surface-2);color:#fff;font:inherit;font-size:16px';
-    $('content').innerHTML = `<div class="empty"><div class="big">🔐</div>${msg}
-        <div style="max-width:440px;margin:22px auto 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
-            ${ON_PI ? '' : `<input id="pi-input" type="url" placeholder="Pi-Adresse (https://….ts.net)" value="${esc(piUrl())}" style="${field}">`}
-            <input id="key-input" type="password" placeholder="Schlüssel" value="${esc(store.get('saydelay_key'))}" style="${field}" autocomplete="current-password">
-            <button class="btn" id="pi-save">Verbinden</button>
-        </div></div>`;
-    $('pi-save').onclick = () => {
-        if (!ON_PI) {
-            let v = $('pi-input').value.trim().replace(/\/+$/, '');
-            if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
-            store.set('saydelay_pi', v);
-            MEDIA = v ? v + '/media/' : '';
-        }
-        store.set('saydelay_key', $('key-input').value.trim());
-        start();
-    };
-    $('key-input').onkeydown = e => { if (e.key === 'Enter') $('pi-save').click(); };
+ 
+/* ---------- Sperrbildschirm ---------- */
+function showLock(msg, shake) {
+    document.body.classList.add('is-locked');
+    $('lock-msg').innerHTML = msg || '';
+    $('lock-msg').classList.toggle('err', !!shake);
+    $('lock').classList.add('show');
+    const box = $("lock-form");
+    if (shake) { box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
+    $('lock-btn').disabled = false; $('lock-btn').textContent = 'Entsperren';
+    const inp = $('lock-pw'); inp.value = ''; setTimeout(() => inp.focus(), 50);
 }
-
-function start() {
-    if (!MEDIA || !store.get('saydelay_key')) return showConnect('Einmal anmelden.<br><small>Adresse und Schlüssel stehen am Ende vom Skript <b>zugang.sh</b> – oder öffne einfach den Einmal-Link von dort.</small>');
-    $('content').innerHTML = '<div class="grid">' + '<div class="skel"></div>'.repeat(6) + '</div>';
-    list('').then(() => loadLibrary()).then(render).catch(err =>
-        showConnect(err.message === 'KEY'
-            ? 'Der Schlüssel stimmt nicht.'
-            : 'Keine Verbindung zum Raspberry Pi.<br><small>Ist er eingeschaltet und die Adresse richtig?</small>'));
+function hideLock() { $('lock').classList.remove('show'); document.body.classList.remove('is-locked'); }
+ 
+$('lock-form').onsubmit = e => {
+    e.preventDefault();
+    const pw = $('lock-pw').value.trim();
+    if (!pw) return;
+    store.set('saydelay_key', pw);
+    $('lock-btn').disabled = true; $('lock-btn').textContent = 'Prüfe…';
+    start(true);
+};
+function logout() { store.set('saydelay_key', ''); showLock('Abgemeldet.'); }
+ 
+function start(fromLogin) {
+    if (!MEDIA) MEDIA = piUrl() ? piUrl() + '/media/' : '';
+    if (!store.get('saydelay_key')) return showLock();
+    if (!fromLogin) $('content').innerHTML = '<div class="grid">' + '<div class="skel"></div>'.repeat(6) + '</div>';
+    list('').then(() => { hideLock(); return loadLibrary(); }).then(render).catch(err => {
+        if (err.message === 'KEY') { store.set('saydelay_key', ''); showLock('Falsches Passwort', fromLogin); }
+        else showLock('Keine Verbindung zum Pi – ist er eingeschaltet?', true);
+    });
 }
 start();
 </script>
 </body>
 </html>
+ 
+Claude hat die Antwort abgeschlossen
