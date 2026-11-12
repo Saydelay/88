@@ -1,925 +1,108 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#07030d">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SAYDELAY">
-    <title>SAYDELAY</title>
-    <style>
-        :root {
-            --bg: #07030d;
-            --bg-2: #0e0718;
-            --surface: rgba(255, 255, 255, 0.045);
-            --surface-2: rgba(255, 255, 255, 0.08);
-            --border: rgba(255, 255, 255, 0.08);
-            --purple: #b56bff;
-            --purple-2: #7c3aed;
-            --pink: #ff5fd2;
-            --glow: rgba(181, 107, 255, 0.45);
-            --text: #ffffff;
-            --muted: rgba(255, 255, 255, 0.55);
-            --green: #3ee08f;
-            --radius: 18px;
-            --safe-t: env(safe-area-inset-top, 0px);
-            --safe-b: env(safe-area-inset-bottom, 0px);
-            --safe-l: env(safe-area-inset-left, 0px);
-            --safe-r: env(safe-area-inset-right, 0px);
-        }
+#!/usr/bin/env bash
+# =====================================================================
+#  SAYDELAY – Videos fürs Streaming optimieren
+#  Einmal ausführen:  sudo bash optimieren.sh
+#  Danach prüft der Pi automatisch alle 10 Minuten neue Filme.
+#
+#  Was passiert: Das "Inhaltsverzeichnis" (moov) wird an den Anfang der
+#  Datei gesetzt -> Film startet sofort, Vorspulen geht direkt.
+#  MKV-Dateien mit H.264 werden zu MP4. Bildqualität bleibt gleich.
+# =====================================================================
+set -e
+if [ "$EUID" -ne 0 ]; then echo "Bitte mit sudo starten:  sudo bash optimieren.sh"; exit 1; fi
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            margin: 0; background: var(--bg); color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
-            -webkit-font-smoothing: antialiased; min-height: 100vh; overflow-x: hidden;
-        }
-        body.locked { overflow: hidden; }
+SELF=/usr/local/bin/saydelay-optimieren
+MEDIA=$(readlink -f /srv/saydelay/media)
+OWNER=$(stat -c %U "$MEDIA")
 
-        /* ---------- Hintergrund ---------- */
-        .bg-fx { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-        .bg-fx::before, .bg-fx::after {
-            content: ""; position: absolute; border-radius: 50%; filter: blur(110px); opacity: .55;
-            animation: float 18s ease-in-out infinite alternate;
-        }
-        .bg-fx::before { width: 60vw; height: 60vw; max-width: 800px; max-height: 800px; background: #3b1270; top: -25vw; left: -10vw; }
-        .bg-fx::after  { width: 45vw; height: 45vw; max-width: 600px; max-height: 600px; background: #5a0f4f; top: -10vw; right: -15vw; animation-delay: -9s; }
-        @keyframes float { to { transform: translate(6vw, 4vw) scale(1.1); } }
+# ---------- Einmalige Installation ----------
+if [ "$(readlink -f "$0")" != "$SELF" ]; then
+  echo "==> ffmpeg installieren (dauert auf dem Pi 3 ein paar Minuten)"
+  apt-get install -y ffmpeg python3
+  install -m 755 "$0" "$SELF"
 
-        /* ---------- Header ---------- */
-        .topbar {
-            position: sticky; top: 0; z-index: 100;
-            padding: calc(14px + var(--safe-t)) calc(20px + var(--safe-r)) 14px calc(20px + var(--safe-l));
-            background: linear-gradient(to bottom, rgba(7,3,13,.92), rgba(7,3,13,.65));
-            backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
-            border-bottom: 1px solid var(--border);
-        }
-        .topbar-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 20px; }
-        .logo {
-            font-size: 26px; font-weight: 900; letter-spacing: -1px; margin: 0; white-space: nowrap;
-            background: linear-gradient(90deg, #fff 0%, var(--purple) 55%, var(--pink) 100%);
-            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-            cursor: pointer; user-select: none;
-        }
-        .logo span { -webkit-text-fill-color: var(--purple); }
-        .search-wrap { position: relative; flex: 1; max-width: 460px; margin-left: auto; }
-        .search-wrap svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; opacity: .5; pointer-events: none; }
-        #search {
-            width: 100%; padding: 13px 44px 13px 46px; background: var(--surface-2); border: 1px solid var(--border);
-            border-radius: 14px; color: #fff; font: inherit; font-size: 16px;
-            transition: border-color .25s, box-shadow .25s, background .25s; -webkit-appearance: none; appearance: none;
-        }
-        #search::-webkit-search-cancel-button { display: none; }
-        #search::placeholder { color: var(--muted); }
-        #search:focus { outline: none; border-color: var(--purple); background: rgba(181,107,255,.08); box-shadow: 0 0 0 4px rgba(181,107,255,.15), 0 0 30px var(--glow); }
-        #search-clear {
-            position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px;
-            border-radius: 50%; border: 0; background: var(--surface-2); color: #fff; cursor: pointer; display: none; font-size: 14px;
-        }
-        #search-clear.show { display: block; }
+  cat > /etc/systemd/system/saydelay-optimieren.service <<UNIT
+[Unit]
+Description=SAYDELAY Videos fuers Streaming optimieren
+[Service]
+Type=oneshot
+ExecStart=$SELF
+Nice=15
+IOSchedulingClass=idle
+UNIT
+  cat > /etc/systemd/system/saydelay-optimieren.timer <<UNIT
+[Unit]
+Description=SAYDELAY neue Videos alle 10 Minuten pruefen
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+[Install]
+WantedBy=timers.target
+UNIT
+  systemctl daemon-reload
+  systemctl enable --now saydelay-optimieren.timer
 
-        /* ---------- Layout ---------- */
-        main {
-            position: relative; z-index: 2; max-width: 1400px; margin: 0 auto;
-            padding: 26px calc(20px + var(--safe-r)) calc(60px + var(--safe-b)) calc(20px + var(--safe-l));
-        }
-        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 26px; flex-wrap: wrap; }
-        .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
-        .chips::-webkit-scrollbar { display: none; }
-        .chip {
-            flex: 0 0 auto; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--border);
-            background: var(--surface); color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .25s;
-        }
-        .chip:hover { color: #fff; border-color: rgba(255,255,255,.2); }
-        .chip.active { color: #fff; background: linear-gradient(135deg, var(--purple-2), var(--purple)); border-color: transparent; box-shadow: 0 6px 22px var(--glow); }
-        .chip .count { opacity: .65; margin-left: 6px; font-weight: 500; }
-        .result-info { color: var(--muted); font-size: 14px; }
+  sudo -u "$OWNER" mkdir -p "$MEDIA/Covers" 2>/dev/null || mkdir -p "$MEDIA/Covers"
+  echo "==> Ordner 'Covers' angelegt."
+  case "$0" in /srv/saydelay/www/*) rm -f "$0" ;; esac
+  echo "==> Automatik ist an. Jetzt erster Durchlauf über alle Filme:"
+  echo ""
+fi
 
-        .section { margin-bottom: 40px; }
-        .section-title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
-        .section-title::before { content: ""; width: 4px; height: 20px; border-radius: 4px; background: linear-gradient(var(--purple), var(--pink)); }
+# ---------- Nur einmal gleichzeitig laufen ----------
+exec 9>/run/saydelay-optimieren.lock
+flock -n 9 || { echo "Optimierung läuft gerade schon."; exit 0; }
 
-        /* Weiterschauen: horizontale Reihe */
-        .row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 320px); gap: 18px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 10px; scroll-snap-type: x mandatory; }
-        .row::-webkit-scrollbar { display: none; }
-        .cw {
-            scroll-snap-align: start; position: relative; display: flex; gap: 14px; align-items: center; padding: 12px;
-            border-radius: 16px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; transition: all .25s;
-        }
-        .cw:hover { background: rgba(181,107,255,.1); border-color: rgba(181,107,255,.6); }
-        .cw-img { width: 62px; flex: 0 0 auto; aspect-ratio: 2/3; border-radius: 10px; overflow: hidden; background: #1d0f33; }
-        .cw-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .cw-main { flex: 1; min-width: 0; }
-        .cw-title { font-weight: 700; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cw-sub { font-size: 12.5px; color: var(--muted); margin: 3px 0 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.15); overflow: hidden; }
-        .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--purple), var(--pink)); border-radius: 4px; }
-
-        /* ---------- Grid ---------- */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 24px; }
-        .card { position: relative; cursor: pointer; border-radius: var(--radius); outline: none; opacity: 0; transform: translateY(14px); animation: in .5s cubic-bezier(.2,.8,.2,1) forwards; }
-        @keyframes in { to { opacity: 1; transform: none; } }
-        .poster {
-            position: relative; aspect-ratio: 2 / 3; border-radius: var(--radius); overflow: hidden;
-            background: linear-gradient(145deg, #1d0f33, #0c0616); border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,.45); transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .45s, border-color .45s; isolation: isolate;
-        }
-        .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s; }
-        .poster img.loaded { opacity: 1; }
-        .poster::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 35%); pointer-events: none; }
-        .poster .shine { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.18) 48%, transparent 62%); transform: translateX(-100%); transition: transform .8s, opacity .3s; }
-        .play-btn { position: absolute; z-index: 3; left: 50%; top: 50%; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: rgba(181,107,255,.9); box-shadow: 0 0 40px var(--glow); transform: translate(-50%,-50%) scale(.6); opacity: 0; transition: all .35s cubic-bezier(.2,.8,.2,1); }
-        .play-btn svg { width: 22px; height: 22px; margin-left: 3px; fill: #fff; }
-        .badge { position: absolute; z-index: 3; top: 10px; left: 10px; padding: 5px 10px; border-radius: 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; background: rgba(7,3,13,.65); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.12); }
-        .badge.series { color: var(--purple); }
-        .badge.new { left: auto; right: 10px; color: var(--pink); }
-        .watched-dot { position: absolute; z-index: 3; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #05230f; font-size: 14px; font-weight: 900; box-shadow: 0 4px 14px rgba(62,224,143,.45); }
-        .poster .bar { position: absolute; z-index: 3; left: 10px; right: 10px; bottom: 10px; background: rgba(255,255,255,.2); }
-        .card-meta { padding: 12px 4px 0; }
-        .card-title { font-weight: 700; font-size: 15px; line-height: 1.3; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .card-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
-        @media (hover: hover) {
-            .card:hover .poster { transform: translateY(-8px); border-color: rgba(181,107,255,.7); box-shadow: 0 22px 45px rgba(0,0,0,.6), 0 0 35px rgba(181,107,255,.25); }
-            .card:hover .shine { opacity: 1; transform: translateX(100%); }
-            .card:hover .play-btn { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-        }
-        .card:focus-visible .poster { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple); }
-        .card:active .poster { transform: scale(.97); }
-
-        .empty { text-align: center; padding: 80px 20px; color: var(--muted); line-height: 1.6; }
-        .empty .big { font-size: 46px; margin-bottom: 10px; }
-        .empty code { background: var(--surface-2); padding: 2px 8px; border-radius: 6px; color: #fff; }
-
-        /* Lade-Skeleton */
-        .skel { aspect-ratio: 2/3; border-radius: var(--radius); background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%); background-size: 200% 100%; animation: sk 1.3s infinite; }
-        @keyframes sk { to { background-position: -200% 0; } }
-
-        /* ---------- Detail ---------- */
-        #detail { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 30px; visibility: hidden; pointer-events: none; }
-        #detail.open { visibility: visible; pointer-events: auto; }
-        .backdrop { position: absolute; inset: 0; background: rgba(3,1,7,.75); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); opacity: 0; transition: opacity .35s; }
-        #detail.open .backdrop { opacity: 1; }
-        .sheet {
-            position: relative; width: 100%; max-width: 860px; max-height: min(88vh, 900px); background: var(--bg-2);
-            border: 1px solid var(--border); border-radius: 26px; overflow: hidden; display: flex; flex-direction: column;
-            box-shadow: 0 40px 100px rgba(0,0,0,.7); transform: translateY(30px) scale(.97); opacity: 0;
-            transition: transform .45s cubic-bezier(.2,.8,.2,1), opacity .35s;
-        }
-        #detail.open .sheet { transform: none; opacity: 1; }
-        .sheet-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
-        .hero { position: relative; padding: 34px 34px 26px; display: flex; gap: 28px; align-items: flex-end; overflow: hidden; }
-        .hero-bg { position: absolute; inset: -40px; z-index: 0; background-size: cover; background-position: center; filter: blur(40px) saturate(150%); opacity: .45; transform: scale(1.1); }
-        .hero::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(to top, var(--bg-2) 5%, rgba(14,7,24,.4)); }
-        .hero > *:not(.hero-bg) { position: relative; z-index: 1; }
-        .hero-poster { width: 170px; flex: 0 0 auto; aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.12); background: #1d0f33; }
-        .hero-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .hero-info { min-width: 0; }
-        .hero-info h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 900; letter-spacing: -1px; margin: 0 0 8px; line-height: 1.05; }
-        .hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
-        .tag { padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 13px; font-weight: 600; }
-        .tag.purple { background: rgba(181,107,255,.2); color: #dcbcff; }
-        .tag.green { color: var(--green); }
-        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .btn {
-            display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 14px; border: 0;
-            font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; transition: transform .2s, box-shadow .25s, background .25s;
-            color: #fff; background: linear-gradient(135deg, var(--purple-2), var(--purple)); box-shadow: 0 10px 30px var(--glow);
-        }
-        .btn.ghost { background: var(--surface-2); box-shadow: none; border: 1px solid var(--border); }
-        .btn svg { width: 18px; height: 18px; fill: currentColor; }
-        .btn:hover { transform: translateY(-2px); }
-        .btn:active { transform: scale(.97); }
-        .close-btn {
-            position: absolute; top: 16px; right: 16px; z-index: 5; width: 42px; height: 42px; border-radius: 50%;
-            border: 1px solid rgba(255,255,255,.15); background: rgba(7,3,13,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            color: #fff; font-size: 18px; cursor: pointer; display: grid; place-items: center; transition: background .25s, transform .25s;
-        }
-        .close-btn:hover { background: var(--purple); transform: rotate(90deg); }
-        .grabber { display: none; }
-        .body { padding: 0 34px 34px; }
-        .seasons { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 18px; padding: 2px; }
-        .seasons::-webkit-scrollbar { display: none; }
-        .ep-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--muted); font-size: 14px; }
-        .ep-list { display: flex; flex-direction: column; gap: 10px; }
-        .ep { position: relative; overflow: hidden; display: flex; align-items: center; gap: 16px; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; transition: background .25s, border-color .25s, transform .2s; }
-        .ep:hover { background: rgba(181,107,255,.1); border-color: rgba(181,107,255,.6); }
-        .ep:active { transform: scale(.99); }
-        .ep-num { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 16px; background: rgba(181,107,255,.15); color: var(--purple); }
-        .ep-main { flex: 1; min-width: 0; }
-        .ep-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ep-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
-        .ep.watched .ep-num { background: rgba(62,224,143,.15); color: var(--green); }
-        .ep.watched .ep-sub { color: var(--green); }
-        .ep .ep-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--purple), var(--pink)); }
-        .ep-check { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: transparent; color: transparent; cursor: pointer; font-size: 15px; font-weight: 900; display: grid; place-items: center; transition: all .25s; }
-        .ep-check:hover { border-color: var(--green); color: rgba(62,224,143,.6); }
-        .ep.watched .ep-check { background: var(--green); border-color: var(--green); color: #05230f; }
-
-        /* ---------- Player ---------- */
-        #player { position: fixed; inset: 0; z-index: 3000; background: #000; display: none; }
-        #player.open { display: block; }
-        #player video { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; }
-        .p-top {
-            position: absolute; z-index: 2; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 12px;
-            padding: calc(14px + var(--safe-t)) calc(16px + var(--safe-r)) 30px calc(16px + var(--safe-l));
-            background: linear-gradient(to bottom, rgba(0,0,0,.8), transparent); transition: opacity .4s;
-        }
-        #player.idle .p-top { opacity: 0; pointer-events: none; }
-        .p-btn { flex: 0 0 auto; height: 42px; padding: 0 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); background: rgba(20,10,35,.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #fff; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
-        .p-btn:hover { background: var(--purple); }
-        .p-title { flex: 1; min-width: 0; font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 10px #000; }
-        .p-title small { display: block; font-weight: 500; font-size: 12.5px; color: rgba(255,255,255,.7); }
-        #p-next { display: none; }
-        #p-next.show { display: block; }
-        .p-msg { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; color: rgba(255,255,255,.85); max-width: 420px; padding: 20px; line-height: 1.6; display: none; }
-
-        /* ---------- Sperrbildschirm ---------- */
-        #lock {
-            position: fixed; inset: 0; z-index: 5000; display: none; align-items: center; justify-content: center;
-            padding: 24px calc(24px + var(--safe-r)) calc(24px + var(--safe-b)) calc(24px + var(--safe-l));
-            background: radial-gradient(circle at 30% 20%, #3b1270 0%, transparent 55%), radial-gradient(circle at 80% 90%, #5a0f4f 0%, transparent 50%), var(--bg);
-        }
-        #lock.show { display: flex; animation: fade .4s ease; }
-        @keyframes fade { from { opacity: 0; } }
-        body.is-locked { overflow: hidden; }
-        .lock-box {
-            width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 16px;
-            padding: 38px 28px 30px; border-radius: 28px; text-align: center;
-            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
-            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 40px 100px rgba(0,0,0,.6);
-        }
-        .lock-logo {
-            font-size: 34px; font-weight: 900; letter-spacing: -1.2px;
-            background: linear-gradient(90deg, #fff 0%, var(--purple) 55%, var(--pink) 100%);
-            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .lock-logo span { -webkit-text-fill-color: var(--purple); }
-        .lock-icon {
-            width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; margin: 4px 0 6px;
-            background: linear-gradient(135deg, var(--purple-2), var(--purple)); box-shadow: 0 10px 40px var(--glow);
-        }
-        .lock-icon svg { width: 28px; height: 28px; color: #fff; }
-        #lock-pw {
-            width: 100%; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.07);
-            color: #fff; font: inherit; font-size: 18px; text-align: center; letter-spacing: 3px; transition: border-color .25s, box-shadow .25s;
-        }
-        #lock-pw::placeholder { letter-spacing: 0; color: var(--muted); font-size: 16px; }
-        #lock-pw:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 4px rgba(181,107,255,.18), 0 0 30px var(--glow); }
-        #lock-btn { width: 100%; justify-content: center; padding: 15px; font-size: 16px; }
-        #lock-btn:disabled { opacity: .7; cursor: default; }
-        #lock-msg { min-height: 20px; font-size: 14px; color: var(--muted); }
-        #lock-msg.err { color: #ff6b8b; }
-        .shake { animation: shake .45s; }
-        @keyframes shake { 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
-
-        .lock-out {
-            flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2);
-            color: #fff; cursor: pointer; display: grid; place-items: center; transition: all .25s;
-        }
-        .lock-out:hover { border-color: var(--purple); background: rgba(181,107,255,.15); }
-        .lock-out svg { width: 19px; height: 19px; }
-        @media (max-width: 640px) { .lock-out { width: 40px; height: 40px; margin-left: auto; } }
-
-        /* ---------- Toast ---------- */
-        #toast { position: fixed; left: 50%; bottom: calc(24px + var(--safe-b)); z-index: 4000; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; padding: 12px 20px; border-radius: 14px; background: rgba(30,16,50,.95); border: 1px solid rgba(181,107,255,.4); font-size: 14px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,.6); transition: all .35s cubic-bezier(.2,.8,.2,1); white-space: nowrap; }
-        #toast.show { transform: translate(-50%, 0); opacity: 1; }
-
-        /* ---------- iPad ---------- */
-        @media (max-width: 1024px) { .grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 20px; } }
-
-        /* ---------- Handy ---------- */
-        @media (max-width: 640px) {
-            .topbar-inner { flex-wrap: wrap; gap: 12px; }
-            .logo { font-size: 24px; }
-            .search-wrap { flex: 1 1 100%; max-width: none; order: 3; }
-            main { padding-top: 18px; }
-            .toolbar { margin-bottom: 18px; }
-            .result-info { display: none; }
-            .grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
-            .row { grid-auto-columns: 82%; }
-            .card-meta { padding-top: 8px; }
-            .card-title { font-size: 12.5px; }
-            .card-sub { font-size: 11px; }
-            .badge { top: 6px; left: 6px; padding: 3px 7px; font-size: 9px; border-radius: 6px; }
-            .badge.new { right: 6px; }
-            .watched-dot { top: 6px; right: 6px; width: 22px; height: 22px; font-size: 11px; }
-            .poster .bar { left: 6px; right: 6px; bottom: 6px; height: 3px; }
-            .poster { border-radius: 12px; }
-            .section-title { font-size: 18px; }
-            #detail { padding: 0; align-items: flex-end; }
-            .sheet { max-width: none; max-height: 94vh; max-height: 94dvh; border-radius: 26px 26px 0 0; border-bottom: 0; transform: translateY(100%); opacity: 1; }
-            .grabber { display: block; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 42px; height: 5px; border-radius: 5px; background: rgba(255,255,255,.3); z-index: 6; }
-            .hero { padding: 34px 20px 20px; gap: 18px; }
-            .hero-poster { width: 110px; border-radius: 10px; }
-            .tag { font-size: 12px; padding: 5px 10px; }
-            .btn { padding: 12px 18px; font-size: 14px; }
-            .close-btn { top: 14px; right: 14px; width: 36px; height: 36px; font-size: 15px; }
-            .body { padding: 0 16px calc(24px + var(--safe-b)); }
-            .ep { padding: 12px; gap: 12px; border-radius: 14px; }
-            .ep-num { width: 38px; height: 38px; font-size: 14px; border-radius: 10px; }
-        }
-        @media (max-width: 360px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-height: 500px) and (orientation: landscape) {
-            .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-            .hero-poster { width: 90px; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation: none !important; transition: none !important; }
-            .card { opacity: 1; transform: none; }
-        }
-    </style>
-</head>
-<body>
-
-<div class="bg-fx"></div>
-
-<header class="topbar">
-    <div class="topbar-inner">
-        <h1 class="logo" onclick="resetAll()">SAYDELAY<span>.</span></h1>
-        <div class="search-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            <input type="search" id="search" placeholder="Filme oder Serien suchen…" autocomplete="off" enterkeyhint="search">
-            <button id="search-clear" aria-label="Suche leeren">✕</button>
-        </div>
-        <button class="lock-out" onclick="logout()" title="Sperren" aria-label="Sperren">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
-        </button>
-    </div>
-</header>
-
-<main>
-    <div class="toolbar">
-        <div class="chips" id="filters"></div>
-        <div class="result-info" id="result-info"></div>
-    </div>
-    <div id="content">
-        <div class="grid">
-            <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
-        </div>
-    </div>
-</main>
-
-<div id="detail" aria-hidden="true">
-    <div class="backdrop" onclick="closeDetail()"></div>
-    <div class="sheet" role="dialog" aria-modal="true">
-        <div class="grabber"></div>
-        <button class="close-btn" onclick="closeDetail()" aria-label="Schließen">✕</button>
-        <div class="sheet-scroll" id="sheet-scroll">
-            <div class="hero" id="hero"></div>
-            <div class="body" id="detail-body"></div>
-        </div>
-    </div>
-</div>
-
-<div id="player">
-    <video id="video" controls playsinline preload="metadata"></video>
-    <div class="p-top">
-        <button class="p-btn" onclick="closePlayer()">◀ Zurück</button>
-        <div class="p-title" id="p-title"></div>
-        <button class="p-btn" id="p-next">Nächste Folge ▶</button>
-    </div>
-    <div class="p-msg" id="p-msg"></div>
-</div>
-
-<div id="toast"></div>
-
-<div id="lock">
-    <form class="lock-box" id="lock-form" autocomplete="on">
-        <div class="lock-logo">SAYDELAY<span>.</span></div>
-        <div class="lock-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
-        </div>
-        <input type="text" name="username" value="saydelay" autocomplete="username" hidden>
-        <input type="password" id="lock-pw" placeholder="Passwort" autocomplete="current-password" enterkeyhint="go">
-        <button class="btn" id="lock-btn" type="submit">Entsperren</button>
-        <div id="lock-msg"></div>
-    </form>
-</div>
-
-<script>
-/* =====================================================================
-   SAYDELAY – liest die Filme automatisch vom Raspberry Pi.
-   Ordner-Aufbau (im Netzwerkordner "Filme"):
-
-     Filme/
-        Iron Man.mp4
-        Iron Man.jpg            <- Cover: gleicher Name wie der Film
-        Zoomania/               <- (geht auch: eigener Ordner pro Film)
-           Zoomania.mp4
-           poster.jpg
-     Serien/
-        Dexter/
-           poster.jpg           <- Cover der Serie
-           Staffel 6/
-              Folge 01.mp4
-              Folge 02.mp4
-              poster.jpg        <- (optional) eigenes Cover pro Staffel
-           Staffel 7/
-              ...
-   ===================================================================== */
-
-/* Adresse deines Pis (steht am Ende vom Setup). Kann auch direkt auf der Seite eingegeben werden. */
-const PI_URL_DEFAULT = 'https://saydelay.tail9240f2.ts.net';
-
-const ON_PI = !/github\.io$/i.test(location.hostname) && location.protocol !== 'file:';
-const store = { get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
-
-// Einmal-Link:  saydelay.github.io/#pi=https://...&k=SCHLUESSEL  -> speichern und aus der Adresse entfernen
-(function () {
-    const h = new URLSearchParams(location.hash.slice(1));
-    if (h.get('pi')) store.set('saydelay_pi', h.get('pi').trim().replace(/\/+$/, ''));
-    if (h.get('k')) store.set('saydelay_key', h.get('k').trim());
-    if (h.get('pi') || h.get('k')) history.replaceState(null, '', location.pathname + location.search);
-})();
-
-function piUrl() { return (store.get('saydelay_pi') || PI_URL_DEFAULT).trim().replace(/\/+$/, ''); }
-const keyQ = () => store.get('saydelay_key') ? '?k=' + encodeURIComponent(store.get('saydelay_key')) : '';
-let MEDIA = ON_PI ? 'media/' : (piUrl() ? piUrl() + '/media/' : '');
-const NEW_DAYS = 7;   // "NEU"-Badge für Dateien, die jünger als X Tage sind
-const VIDEO_RE = /\.(mp4|m4v|webm|mov)$/i;
-const IMG_RE = /\.(jpe?g|png|webp)$/i;
-const POSTER_NAMES = ['poster', 'cover', 'folder', 'thumb'];
-
-/* ---------- Helfer ---------- */
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const enc = p => p.split('/').map(encodeURIComponent).join('/');
-const url = p => MEDIA + enc(p) + keyQ();
-const stripExt = n => n.replace(/\.[^.]+$/, '');
-const natural = (a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' });
-const fmtTime = s => { s = Math.floor(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
-
-async function list(path) {
-    const r = await fetch(MEDIA + (path ? enc(path) + '/' : '') + keyQ(), { cache: 'no-store' });
-    if (r.status === 403) throw new Error('KEY');
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return (await r.json()).filter(e => !e.name.startsWith('.'));
+# Steht das Inhaltsverzeichnis (moov) schon vor den Videodaten (mdat)?
+faststart_ok() {
+python3 - "$1" <<'PY'
+import sys, os, struct
+p = sys.argv[1]; size = os.path.getsize(p); pos = 0
+with open(p, 'rb') as f:
+    while pos + 8 <= size:
+        f.seek(pos); n, t = struct.unpack('>I4s', f.read(8))
+        if n == 1: n = struct.unpack('>Q', f.read(8))[0]
+        elif n == 0: n = size - pos
+        if t == b'moov': sys.exit(0)
+        if t == b'mdat': sys.exit(1)
+        if n < 8: break
+        pos += n
+sys.exit(1)
+PY
 }
 
-function findPoster(entries, base, dir) {
-    const imgs = entries.filter(e => e.type === 'file' && IMG_RE.test(e.name));
-    let hit = base && imgs.find(e => stripExt(e.name).toLowerCase() === base.toLowerCase());
-    if (!hit) hit = imgs.find(e => POSTER_NAMES.includes(stripExt(e.name).toLowerCase()));
-    if (!hit && dir) hit = imgs[0];
-    return hit ? (dir ? dir + '/' : '') + hit.name : null;
-}
+count=0
+find "$MEDIA" -type f \( -iname '*.mp4' -o -iname '*.m4v' -o -iname '*.mkv' -o -iname '*.mov' -o -iname '*.avi' \) \
+     -not -name '*.saydelay-tmp.mp4' -mmin +2 -print0 |
+while IFS= read -r -d '' f; do
+  ext=$(echo "${f##*.}" | tr 'A-Z' 'a-z')
+  if [ "$ext" = "mp4" ] || [ "$ext" = "m4v" ]; then
+    faststart_ok "$f" && continue
+  fi
 
-function epTitle(file, i) {
-    const base = stripExt(file);
-    const m = base.match(/[sS]\d+\s*[eE](\d+)/) || base.match(/^(?:folge|episode|ep|e)?\s*0*(\d+)$/i);
-    if (m) return 'Folge ' + parseInt(m[1], 10);
-    return base;
-}
+  v=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$f" </dev/null || true)
+  a=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$f" </dev/null || true)
+  if [ "$v" != "h264" ]; then
+    echo "ÜBERSPRUNGEN – Video ist '$v', muss am PC umgewandelt werden: ${f#$MEDIA/}"
+    continue
+  fi
+  if [ "$a" = "aac" ] || [ -z "$a" ]; then AUDIO="-c:a copy"; else AUDIO="-c:a aac -b:a 160k -ac 2"; fi
 
-function seasonNumber(name, i) { const m = name.match(/\d+/); return m ? parseInt(m[0], 10) : i + 1; }
-const isNew = mtime => mtime && (Date.now() - new Date(mtime).getTime()) < NEW_DAYS * 864e5;
+  out="${f%.*}.mp4"
+  tmp="${f%.*}.saydelay-tmp.mp4"
+  echo "Optimiere: ${f#$MEDIA/}"
+  if ffmpeg -nostdin -v error -y -i "$f" -map 0:v:0 -map '0:a?' -c:v copy $AUDIO -movflags +faststart "$tmp"; then
+    touch -r "$f" "$tmp"
+    chown --reference="$f" "$tmp" 2>/dev/null || true
+    mv -f "$tmp" "$out"
+    [ "$f" != "$out" ] && rm -f "$f"
+    echo "   ✓ fertig"
+    count=$((count+1))
+  else
+    rm -f "$tmp"
+    echo "   ✗ Fehler – Datei bleibt unverändert"
+  fi
+done
 
-/* ---------- Bibliothek laden ---------- */
-let titles = [];
-const byId = {};   // Datei-Pfad -> { title, season, ep }
-
-async function loadLibrary() {
-    const [filmEntries, serienEntries] = await Promise.all([
-        list('Filme').catch(() => []),
-        list('Serien').catch(() => []),
-    ]);
-
-    // Filme (lose Dateien + Ordner pro Film)
-    const movies = [];
-    filmEntries.filter(e => e.type === 'file' && VIDEO_RE.test(e.name)).forEach(e => {
-        const name = stripExt(e.name);
-        const img = filmEntries.find(x => x.type === 'file' && IMG_RE.test(x.name) && stripExt(x.name).toLowerCase() === name.toLowerCase());
-        movies.push({ type: 'movie', id: 'Filme/' + e.name, file: 'Filme/' + e.name, name, cover: img ? 'Filme/' + img.name : null, mtime: e.mtime });
-    });
-    await Promise.all(filmEntries.filter(e => e.type === 'directory').map(async d => {
-        const dir = 'Filme/' + d.name;
-        const inner = await list(dir).catch(() => []);
-        const vid = inner.filter(e => e.type === 'file' && VIDEO_RE.test(e.name)).sort((a, b) => natural(a.name, b.name))[0];
-        if (!vid) return;
-        movies.push({ type: 'movie', id: dir + '/' + vid.name, file: dir + '/' + vid.name, name: d.name, cover: findPoster(inner, stripExt(vid.name), dir), mtime: vid.mtime });
-    }));
-
-    // Serien
-    const series = await Promise.all(serienEntries.filter(e => e.type === 'directory').map(async d => {
-        const dir = 'Serien/' + d.name;
-        const inner = await list(dir).catch(() => []);
-        const cover = findPoster(inner, d.name, dir);
-        const seasonDirs = inner.filter(e => e.type === 'directory').sort((a, b) => natural(a.name, b.name));
-        const seasons = await Promise.all(seasonDirs.map(async (sd, i) => {
-            const sdir = dir + '/' + sd.name;
-            const eps = await list(sdir).catch(() => []);
-            return {
-                number: seasonNumber(sd.name, i),
-                cover: findPoster(eps, null, null) ? sdir + '/' + findPoster(eps, null, null) : cover,
-                episodes: eps.filter(e => e.type === 'file' && VIDEO_RE.test(e.name)).sort((a, b) => natural(a.name, b.name))
-                    .map((e, j) => ({ id: sdir + '/' + e.name, file: sdir + '/' + e.name, title: epTitle(e.name, j), mtime: e.mtime })),
-            };
-        }));
-        // Folgen direkt im Serien-Ordner = Staffel 1
-        const loose = inner.filter(e => e.type === 'file' && VIDEO_RE.test(e.name)).sort((a, b) => natural(a.name, b.name));
-        if (loose.length) seasons.unshift({ number: 1, cover, episodes: loose.map((e, j) => ({ id: dir + '/' + e.name, file: dir + '/' + e.name, title: epTitle(e.name, j), mtime: e.mtime })) });
-        const filled = seasons.filter(s => s.episodes.length).sort((a, b) => a.number - b.number);
-        if (!filled.length) return null;
-        return { type: 'series', name: d.name, cover: cover || filled[0].cover, seasons: filled, mtime: filled.flatMap(s => s.episodes).map(e => e.mtime).sort().pop() };
-    }));
-
-    titles = [...series.filter(Boolean), ...movies].sort((a, b) => natural(a.name, b.name));
-    titles.forEach(t => {
-        if (t.type === 'movie') byId[t.id] = { title: t };
-        else t.seasons.forEach((s, si) => s.episodes.forEach((ep, ei) => byId[ep.id] = { title: t, si, ei }));
-    });
-}
-
-/* ---------- Fortschritt (pro Gerät gespeichert) ---------- */
-let progress = {};
-try { progress = JSON.parse(localStorage.getItem('saydelay_progress')) || {}; } catch (e) {}
-const saveProgress = () => { try { localStorage.setItem('saydelay_progress', JSON.stringify(progress)); } catch (e) {} };
-const isDone = id => !!(progress[id] && progress[id].done);
-const pct = id => { const p = progress[id]; return p && p.d ? Math.min(100, p.t / p.d * 100) : 0; };
-function setDone(id, v) { progress[id] = { ...(progress[id] || {}), done: v, t: v ? 0 : (progress[id] || {}).t || 0, ts: Date.now() }; saveProgress(); }
-
-function seriesStats(t) {
-    const eps = t.seasons.flatMap(s => s.episodes);
-    return { total: eps.length, done: eps.filter(e => isDone(e.id)).length };
-}
-function nextEpisode(t) {
-    // zuletzt angefangene Folge, sonst erste ungesehene
-    const eps = t.seasons.flatMap((s, si) => s.episodes.map((e, ei) => ({ e, si, ei })));
-    const started = eps.filter(x => !isDone(x.e.id) && progress[x.e.id] && progress[x.e.id].t > 5).sort((a, b) => progress[b.e.id].ts - progress[a.e.id].ts)[0];
-    return started || eps.find(x => !isDone(x.e.id)) || null;
-}
-function isWatchedTitle(t) { if (t.type === 'movie') return isDone(t.id); const s = seriesStats(t); return s.done === s.total; }
-
-/* ---------- Bilder ---------- */
-function fallbackCover(name) {
-    const words = name.split(' '); const lines = []; let line = '';
-    words.forEach(w => { if ((line + ' ' + w).trim().length > 14) { lines.push(line.trim()); line = w; } else line += ' ' + w; });
-    lines.push(line.trim());
-    const text = lines.slice(0, 4).map((l, i) => `<tspan x='300' dy='${i === 0 ? 0 : 62}'>${esc(l)}</tspan>`).join('');
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#3b1270'/><stop offset='1' stop-color='#0c0616'/></linearGradient></defs><rect width='600' height='900' fill='url(#g)'/><text x='300' y='${430 - (lines.length - 1) * 31}' fill='white' font-family='Arial,sans-serif' font-size='52' font-weight='800' text-anchor='middle'>${text}</text></svg>`;
-    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-}
-const coverSrc = (cover, name) => cover ? url(cover) : fallbackCover(name);
-function imgTag(cover, name, extra = '') {
-    return `<img src="${esc(coverSrc(cover, name))}" alt="${esc(name)}" loading="lazy" decoding="async" ${extra}
-        onload="this.classList.add('loaded')"
-        onerror="this.onerror=null;this.src='${fallbackCover(name).replace(/'/g, '%27')}';this.classList.add('loaded')">`;
-}
-
-/* ---------- Übersicht ---------- */
-let currentFilter = 'all';
-const filters = [
-    { key: 'all', label: 'Alle' },
-    { key: 'movie', label: 'Filme' },
-    { key: 'series', label: 'Serien' },
-    { key: 'unwatched', label: 'Noch nicht gesehen' },
-];
-
-function renderFilters() {
-    const counts = {
-        all: titles.length,
-        movie: titles.filter(t => t.type === 'movie').length,
-        series: titles.filter(t => t.type === 'series').length,
-        unwatched: titles.filter(t => !isWatchedTitle(t)).length,
-    };
-    $('filters').innerHTML = filters.map(f => `<button class="chip ${currentFilter === f.key ? 'active' : ''}" data-f="${f.key}">${f.label}<span class="count">${counts[f.key]}</span></button>`).join('');
-    $('filters').querySelectorAll('.chip').forEach(b => b.onclick = () => { currentFilter = b.dataset.f; render(); });
-}
-
-function cardHTML(t, i) {
-    let badge, sub, extra = '';
-    if (t.type === 'movie') {
-        badge = `<span class="badge">Film</span>`;
-        const p = progress[t.id];
-        sub = isDone(t.id) ? 'Gesehen' : p && p.t > 5 ? `Noch ${fmtTime(p.d - p.t)}` : 'Film';
-        if (isDone(t.id)) extra = `<div class="watched-dot">✓</div>`;
-        else if (pct(t.id) > 0) extra = `<div class="bar"><i style="width:${pct(t.id)}%"></i></div>`;
-    } else {
-        const st = seriesStats(t);
-        badge = `<span class="badge series">Serie</span>`;
-        sub = t.seasons.length > 1 ? `${t.seasons.length} Staffeln · ${st.total} Folgen` : `Staffel ${t.seasons[0].number} · ${st.total} Folgen`;
-        if (st.done === st.total) extra = `<div class="watched-dot">✓</div>`;
-        else if (st.done > 0) extra = `<div class="bar"><i style="width:${st.done / st.total * 100}%"></i></div>`;
-    }
-    if (!extra.includes('watched-dot') && isNew(t.mtime) && !isWatchedTitle(t)) extra += `<span class="badge new">Neu</span>`;
-    return `
-        <div class="card" tabindex="0" data-i="${titles.indexOf(t)}" style="animation-delay:${Math.min(i * 35, 600)}ms">
-            <div class="poster">
-                ${imgTag(t.cover, t.name)}
-                <div class="shine"></div>
-                ${badge}${extra}
-                <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-            </div>
-            <div class="card-meta"><p class="card-title">${esc(t.name)}</p><div class="card-sub">${sub}</div></div>
-        </div>`;
-}
-
-function continueHTML() {
-    const items = Object.entries(progress)
-        .filter(([id, p]) => byId[id] && !p.done && p.t > 5 && p.d)
-        .sort((a, b) => b[1].ts - a[1].ts).slice(0, 12);
-    if (!items.length) return '';
-    return `<section class="section"><h3 class="section-title">Weiterschauen</h3><div class="row">${items.map(([id, p]) => {
-        const ref = byId[id]; const t = ref.title;
-        let sub, cover = t.cover;
-        if (t.type === 'series') { const s = t.seasons[ref.si]; sub = `S${s.number} · ${s.episodes[ref.ei].title}`; cover = s.cover || t.cover; }
-        else sub = 'Film';
-        return `<div class="cw" data-id="${esc(id)}">
-            <div class="cw-img">${imgTag(cover, t.name, 'class="loaded"')}</div>
-            <div class="cw-main"><div class="cw-title">${esc(t.name)}</div><div class="cw-sub">${esc(sub)} · noch ${fmtTime(p.d - p.t)}</div><div class="bar"><i style="width:${pct(id)}%"></i></div></div>
-        </div>`;
-    }).join('')}</div></section>`;
-}
-
-function render() {
-    const q = $('search').value.trim().toLowerCase();
-    $('search-clear').classList.toggle('show', q.length > 0);
-    renderFilters();
-
-    let items = titles.filter(t => t.name.toLowerCase().includes(q));
-    if (currentFilter === 'movie') items = items.filter(t => t.type === 'movie');
-    if (currentFilter === 'series') items = items.filter(t => t.type === 'series');
-    if (currentFilter === 'unwatched') items = items.filter(t => !isWatchedTitle(t));
-    $('result-info').textContent = `${items.length} Titel`;
-
-    const content = $('content');
-    if (!titles.length) {
-        content.innerHTML = `<div class="empty"><div class="big">📂</div>Noch keine Filme da.<br>Zieh deine Filme in den Netzwerkordner <code>Filme</code> → Unterordner <code>Filme</code> oder <code>Serien</code>.</div>`;
-        return;
-    }
-    if (!items.length) {
-        content.innerHTML = `<div class="empty"><div class="big">🔍</div>Nichts gefunden${q ? ` für „${esc(q)}“` : ''}.</div>`;
-        return;
-    }
-
-    let html = '';
-    if (!q && currentFilter === 'all') {
-        html += continueHTML();
-        const series = items.filter(t => t.type === 'series');
-        const movies = items.filter(t => t.type === 'movie');
-        let i = 0;
-        if (series.length) html += `<section class="section"><h3 class="section-title">Serien</h3><div class="grid">${series.map(t => cardHTML(t, i++)).join('')}</div></section>`;
-        if (movies.length) html += `<section class="section"><h3 class="section-title">Filme</h3><div class="grid">${movies.map(t => cardHTML(t, i++)).join('')}</div></section>`;
-    } else {
-        html = `<div class="grid">${items.map((t, i) => cardHTML(t, i)).join('')}</div>`;
-    }
-    content.innerHTML = html;
-
-    content.querySelectorAll('.card').forEach(c => {
-        const open = () => { const t = titles[+c.dataset.i]; t.type === 'movie' ? openMovie(t) : openSeries(t); };
-        c.onclick = open;
-        c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
-    });
-    content.querySelectorAll('.cw').forEach(c => c.onclick = () => playId(c.dataset.id));
-}
-
-/* ---------- Detail ---------- */
-let currentTitle = null, currentSeason = 0;
-const playIcon = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-
-function openSheet() {
-    $('detail').classList.add('open'); $('detail').setAttribute('aria-hidden', 'false');
-    document.body.classList.add('locked'); $('sheet-scroll').scrollTop = 0;
-    pushLayer('detail');
-}
-function closeDetail(fromHistory) {
-    if (!$('detail').classList.contains('open')) return;
-    $('detail').classList.remove('open'); $('detail').setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('locked'); currentTitle = null;
-    if (!fromHistory) popLayer('detail');
-}
-
-function heroHTML(name, cover, tags, actions) {
-    return `<div class="hero-bg" style="background-image:url('${esc(coverSrc(cover, name)).replace(/'/g, '%27')}')"></div>
-        <div class="hero-poster">${imgTag(cover, name, 'class="loaded"')}</div>
-        <div class="hero-info"><h2>${esc(name)}</h2><div class="hero-tags">${tags}</div><div class="actions">${actions}</div></div>`;
-}
-
-function openMovie(t) {
-    currentTitle = t;
-    const p = progress[t.id]; const done = isDone(t.id);
-    const resume = p && p.t > 5 && !done;
-    $('hero').innerHTML = heroHTML(t.name, t.cover,
-        `<span class="tag purple">Film</span>${p && p.d ? `<span class="tag">${fmtTime(p.d)}</span>` : ''}${done ? '<span class="tag green">✓ Gesehen</span>' : ''}`,
-        resume
-            ? `<button class="btn" id="a-resume">${playIcon}Fortsetzen bei ${fmtTime(p.t)}</button><button class="btn ghost" id="a-start">Von vorne</button>`
-            : `<button class="btn" id="a-start">${playIcon}${done ? 'Nochmal ansehen' : 'Jetzt ansehen'}</button>`);
-    $('detail-body').innerHTML = `
-        <div class="ep ${done ? 'watched' : ''}" style="cursor:default">
-            <div class="ep-main"><div class="ep-title">Als gesehen markieren</div><div class="ep-sub">${done ? '✓ Gesehen' : 'Noch nicht gesehen'}</div></div>
-            <button class="ep-check" id="a-toggle" aria-label="Gesehen umschalten">✓</button>
-        </div>`;
-    if (resume) $('a-resume').onclick = () => playId(t.id);
-    $('a-start').onclick = () => playId(t.id, true);
-    $('a-toggle').onclick = () => { setDone(t.id, !done); refresh(); };
-    if (!$('detail').classList.contains('open')) openSheet();
-}
-
-function openSeries(t, seasonIdx = null) {
-    currentTitle = t;
-    const nx = nextEpisode(t);
-    currentSeason = seasonIdx !== null ? seasonIdx : (nx ? nx.si : 0);
-    const season = t.seasons[currentSeason];
-    const st = seriesStats(t);
-    const resumeP = nx && progress[nx.e.id];
-
-    $('hero').innerHTML = heroHTML(t.name, season.cover || t.cover,
-        `<span class="tag purple">Serie</span><span class="tag">${t.seasons.length > 1 ? t.seasons.length + ' Staffeln' : 'Staffel ' + season.number}</span><span class="tag ${st.done === st.total ? 'green' : ''}">${st.done}/${st.total} gesehen</span>`,
-        nx ? `<button class="btn" id="a-next">${playIcon}${resumeP && resumeP.t > 5 ? 'Weiterschauen' : st.done ? 'Weiter' : 'Abspielen'} · S${t.seasons[nx.si].number} ${esc(nx.e.title)}</button>` : '');
-    if (nx) $('a-next').onclick = () => playId(nx.e.id);
-
-    let body = '';
-    if (t.seasons.length > 1) body += `<div class="seasons">${t.seasons.map((s, i) => `<button class="chip ${i === currentSeason ? 'active' : ''}" data-s="${i}">Staffel ${s.number}</button>`).join('')}</div>`;
-    body += `<div class="ep-head"><span>${season.episodes.length} Folgen</span><span>${season.episodes.filter(e => isDone(e.id)).length} gesehen</span></div>`;
-    body += `<div class="ep-list">${season.episodes.map((ep, i) => {
-        const done = isDone(ep.id); const p = progress[ep.id];
-        const sub = done ? '✓ Gesehen' : p && p.t > 5 ? `Noch ${fmtTime(p.d - p.t)}` : isNew(ep.mtime) ? '✨ Neu' : `Staffel ${season.number}`;
-        return `<div class="ep ${done ? 'watched' : ''}" data-id="${esc(ep.id)}">
-            <div class="ep-num">${i + 1}</div>
-            <div class="ep-main"><div class="ep-title">${esc(ep.title)}</div><div class="ep-sub">${sub}</div></div>
-            <button class="ep-check" aria-label="Gesehen umschalten">✓</button>
-            ${!done && pct(ep.id) > 0 ? `<div class="ep-bar" style="width:${pct(ep.id)}%"></div>` : ''}
-        </div>`;
-    }).join('')}</div>`;
-    $('detail-body').innerHTML = body;
-
-    $('detail-body').querySelectorAll('[data-s]').forEach(b => b.onclick = () => openSeries(t, +b.dataset.s));
-    $('detail-body').querySelectorAll('.ep').forEach(row => {
-        row.onclick = () => playId(row.dataset.id);
-        row.querySelector('.ep-check').onclick = e => { e.stopPropagation(); setDone(row.dataset.id, !isDone(row.dataset.id)); refresh(); };
-    });
-    if (!$('detail').classList.contains('open')) openSheet();
-}
-
-function refresh() {
-    render();
-    if (!currentTitle) return;
-    const sc = $('sheet-scroll').scrollTop;
-    currentTitle.type === 'movie' ? openMovie(currentTitle) : openSeries(currentTitle, currentSeason);
-    $('sheet-scroll').scrollTop = sc;
-}
-
-/* ---------- Player ---------- */
-const video = $('video');
-let playing = null, lastSave = 0, idleTimer;
-
-function neighbour(id) {
-    const ref = byId[id]; if (!ref || ref.title.type !== 'series') return null;
-    const t = ref.title; let { si, ei } = ref;
-    if (ei + 1 < t.seasons[si].episodes.length) return t.seasons[si].episodes[ei + 1];
-    if (si + 1 < t.seasons.length) return t.seasons[si + 1].episodes[0];
-    return null;
-}
-
-function playId(id, fromStart = false) {
-    const ref = byId[id]; if (!ref) return;
-    const t = ref.title;
-    let file, label, sub;
-    if (t.type === 'movie') { file = t.file; label = t.name; sub = 'Film'; }
-    else { const s = t.seasons[ref.si], e = s.episodes[ref.ei]; file = e.file; label = t.name; sub = `Staffel ${s.number} · ${e.title}`; }
-
-    playing = { id };
-    $('p-title').innerHTML = `${esc(label)}<small>${esc(sub)}</small>`;
-    $('p-msg').style.display = 'none';
-    const nx = neighbour(id);
-    $('p-next').classList.toggle('show', !!nx);
-    $('p-next').onclick = () => nx && playId(nx.id, true);
-
-    const p = progress[id];
-    const startAt = !fromStart && p && !p.done && p.t > 5 && p.d && p.t < p.d - 20 ? p.t : 0;
-    video.src = url(file);
-    video.onloadedmetadata = () => {
-        if (startAt) video.currentTime = startAt;
-        progress[id] = { ...(progress[id] || {}), d: video.duration, ts: Date.now() };
-        if (fromStart) progress[id].done = false;
-        saveProgress();
-    };
-    if (!$('player').classList.contains('open')) {
-        $('player').classList.add('open'); document.body.classList.add('locked');
-        pushLayer('player');
-    }
-    video.play().catch(() => {});
-    poke();
-}
-
-function saveNow() {
-    if (!playing || !video.duration) return;
-    const id = playing.id, t = video.currentTime, d = video.duration;
-    const done = t / d > 0.92 || (progress[id] && progress[id].done && t < 5);
-    progress[id] = { t: done ? 0 : t, d, done: !!done, ts: Date.now() };
-    saveProgress();
-}
-
-video.addEventListener('timeupdate', () => { if (Date.now() - lastSave > 4000) { lastSave = Date.now(); saveNow(); } });
-video.addEventListener('pause', saveNow);
-video.addEventListener('ended', () => {
-    if (!playing) return;
-    progress[playing.id] = { ...(progress[playing.id] || {}), t: 0, done: true, ts: Date.now() }; saveProgress();
-    const nx = neighbour(playing.id);
-    if (nx) { toast('Nächste Folge startet…'); setTimeout(() => playing && playId(nx.id, true), 2500); }
-});
-video.addEventListener('error', () => {
-    $('p-msg').innerHTML = '⚠️ Das Video kann nicht abgespielt werden.<br><small>Am besten als MP4 (H.264 + AAC) speichern – siehe Anleitung.</small>';
-    $('p-msg').style.display = 'block';
-});
-
-function closePlayer(fromHistory) {
-    if (!$('player').classList.contains('open')) return;
-    saveNow();
-    video.pause(); video.removeAttribute('src'); video.load();
-    playing = null;
-    $('player').classList.remove('open');
-    if (!$('detail').classList.contains('open')) document.body.classList.remove('locked');
-    if (!fromHistory) popLayer('player');
-    refresh();
-}
-
-// Leiste oben ausblenden, wenn nichts passiert
-function poke() {
-    $('player').classList.remove('idle'); clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => { if (!video.paused) $('player').classList.add('idle'); }, 3000);
-}
-['mousemove', 'touchstart', 'click'].forEach(ev => $('player').addEventListener(ev, poke, { passive: true }));
-video.addEventListener('pause', poke);
-
-/* ---------- Zurück-Taste (Handy) ---------- */
-const layers = [];
-function pushLayer(name) { layers.push(name); history.pushState({ layer: name }, ''); }
-function popLayer(name) { const i = layers.lastIndexOf(name); if (i === layers.length - 1) { layers.pop(); history.back(); } else if (i >= 0) layers.splice(i, 1); }
-window.addEventListener('popstate', () => {
-    const top = layers.pop();
-    if (top === 'player') closePlayer(true);
-    else if (top === 'detail') closeDetail(true);
-});
-
-/* ---------- Swipe nach unten zum Schließen ---------- */
-(function () {
-    const sheet = document.querySelector('.sheet'); let startY = 0, dy = 0, dragging = false;
-    sheet.addEventListener('touchstart', e => { if ($('sheet-scroll').scrollTop > 0 || window.innerWidth > 640) return; startY = e.touches[0].clientY; dragging = true; dy = 0; }, { passive: true });
-    sheet.addEventListener('touchmove', e => { if (!dragging) return; dy = Math.max(0, e.touches[0].clientY - startY); if (dy > 0) { sheet.style.transition = 'none'; sheet.style.transform = `translateY(${dy}px)`; } }, { passive: true });
-    sheet.addEventListener('touchend', () => { if (!dragging) return; dragging = false; sheet.style.transition = ''; sheet.style.transform = ''; if (dy > 110) closeDetail(); });
-})();
-
-/* ---------- Toast ---------- */
-let toastTimer;
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200); }
-
-/* ---------- Tastatur ---------- */
-document.addEventListener('keydown', e => {
-    if ($('player').classList.contains('open')) {
-        if (e.key === 'Escape') closePlayer();
-        else if (e.key === ' ' && document.activeElement !== video) { e.preventDefault(); video.paused ? video.play() : video.pause(); }
-        else if (e.key === 'ArrowRight') video.currentTime += 10;
-        else if (e.key === 'ArrowLeft') video.currentTime -= 10;
-        else if (e.key === 'f') (video.requestFullscreen || video.webkitEnterFullscreen || (() => {})).call(video);
-        poke(); return;
-    }
-    if (e.key === 'Escape') closeDetail();
-    if (e.key === '/' && document.activeElement !== $('search')) { e.preventDefault(); $('search').focus(); }
-});
-
-/* ---------- Start ---------- */
-function resetAll() { $('search').value = ''; currentFilter = 'all'; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-$('search').addEventListener('input', render);
-$('search-clear').onclick = () => { $('search').value = ''; render(); $('search').focus(); };
-window.addEventListener('beforeunload', saveNow);
-document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
-
-/* ---------- Sperrbildschirm ---------- */
-function showLock(msg, shake) {
-    document.body.classList.add('is-locked');
-    $('lock-msg').innerHTML = msg || '';
-    $('lock-msg').classList.toggle('err', !!shake);
-    $('lock').classList.add('show');
-    const box = $("lock-form");
-    if (shake) { box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
-    $('lock-btn').disabled = false; $('lock-btn').textContent = 'Entsperren';
-    const inp = $('lock-pw'); inp.value = ''; setTimeout(() => inp.focus(), 50);
-}
-function hideLock() { $('lock').classList.remove('show'); document.body.classList.remove('is-locked'); }
-
-$('lock-form').onsubmit = e => {
-    e.preventDefault();
-    const pw = $('lock-pw').value.trim();
-    if (!pw) return;
-    store.set('saydelay_key', pw);
-    $('lock-btn').disabled = true; $('lock-btn').textContent = 'Prüfe…';
-    start(true);
-};
-function logout() { store.set('saydelay_key', ''); showLock('Abgemeldet.'); }
-
-function start(fromLogin) {
-    if (!MEDIA) MEDIA = piUrl() ? piUrl() + '/media/' : '';
-    if (!store.get('saydelay_key')) return showLock();
-    if (!fromLogin) $('content').innerHTML = '<div class="grid">' + '<div class="skel"></div>'.repeat(6) + '</div>';
-    list('').then(() => { hideLock(); return loadLibrary(); }).then(render).catch(err => {
-        if (err.message === 'KEY') { store.set('saydelay_key', ''); showLock('Falsches Passwort', fromLogin); }
-        else showLock('Keine Verbindung zum Pi – ist er eingeschaltet?', true);
-    });
-}
-start();
-</script>
-</body>
-</html>
+echo ""
+echo "Optimierung abgeschlossen."
