@@ -8,6 +8,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SAYDELAY">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <title>SAYDELAY</title>
     <style>
         :root {
@@ -363,6 +366,55 @@
             .ad-row { gap: 7px; }
         }
 
+        /* ---------- Meine Liste ---------- */
+        .heart-btn svg { width: 19px; height: 19px; fill: none; }
+        .heart-btn.on { color: #ff5fd2; border-color: rgba(255,95,210,.45); background: rgba(255,95,210,.12); }
+        .heart-btn.on svg { fill: currentColor; }
+        .heart-btn.on span { color: #fff; }
+        .heart-btn:active svg { transform: scale(1.25); }
+        .heart-btn svg { transition: transform .2s; }
+        .card-heart { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+            background: rgba(7,3,13,.8); color: #ff5fd2; border: 1px solid rgba(255,95,210,.35); }
+        .card-heart svg { width: 16px; height: 16px; }
+        .poster .bar ~ .card-heart { bottom: 22px; }
+        .row.row-cards { grid-auto-columns: minmax(150px, 180px); }
+        .row-cards .card { scroll-snap-align: start; }
+        @media (max-width: 640px) {
+            .row.row-cards { grid-auto-columns: calc((100% - 24px) / 3.15); gap: 12px; }
+            .card-heart { right: 6px; bottom: 6px; width: 24px; height: 24px; }
+            .card-heart svg { width: 13px; height: 13px; }
+            .poster .bar ~ .card-heart { bottom: 15px; }
+        }
+
+        /* ---------- Intro ---------- */
+        #intro { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--bg); cursor: pointer; animation: introOut .45s ease 1.85s forwards; }
+        #intro.out { animation: introOut .3s ease forwards; }
+        @keyframes introOut { to { opacity: 0; visibility: hidden; } }
+        .in-glow { position: absolute; width: 70vmin; height: 70vmin; border-radius: 50%; background: radial-gradient(circle, rgba(124,58,237,.45), transparent 65%);
+            opacity: 0; transform: scale(.6); animation: inGlow 1.6s ease .15s forwards; }
+        @keyframes inGlow { 60% { opacity: 1; } to { opacity: .7; transform: scale(1.1); } }
+        .in-logo { position: relative; display: flex; font-weight: 900; font-size: clamp(44px, 12vw, 104px); letter-spacing: -.045em; line-height: 1;
+            animation: inZoom 2.3s cubic-bezier(.2,.8,.2,1) forwards; }
+        @keyframes inZoom { from { transform: scale(.93); } to { transform: scale(1.04); } }
+        .in-logo span { display: inline-block; opacity: 0; transform: translateY(.38em) scale(.9); filter: blur(10px);
+            text-shadow: 0 0 34px rgba(181,107,255,.55); animation: inLetter .65s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i) * 55ms + .1s); }
+        @keyframes inLetter { to { opacity: 1; transform: none; filter: blur(0); } }
+        .in-logo b { display: inline-block; color: var(--purple); opacity: 0; transform: scale(0); text-shadow: 0 0 24px var(--purple);
+            animation: inDot .5s cubic-bezier(.3,1.7,.5,1) .7s forwards; }
+        @keyframes inDot { to { opacity: 1; transform: scale(1); } }
+        .in-logo::after { content: ""; position: absolute; inset: -10% -6%; pointer-events: none; mix-blend-mode: overlay;
+            background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.95) 50%, transparent 62%); background-size: 260% 100%;
+            background-position: 160% 0; animation: inSweep .9s ease-in-out 1.0s forwards; }
+        @keyframes inSweep { to { background-position: -60% 0; } }
+        .in-line { position: relative; height: 3px; width: 0; margin-top: clamp(16px, 3vw, 26px); border-radius: 3px;
+            background: linear-gradient(90deg, transparent, var(--purple), var(--pink), transparent); animation: inLine .9s cubic-bezier(.2,.8,.2,1) .55s forwards; }
+        @keyframes inLine { to { width: min(56vw, 420px); } }
+        @media (prefers-reduced-motion: reduce) {
+            #intro { animation: introOut .3s ease .5s forwards !important; }
+            .in-logo span, .in-logo b { opacity: 1 !important; transform: none !important; filter: none !important; }
+        }
+
         /* ---------- Toast ---------- */
         #toast { position: fixed; left: 50%; bottom: calc(24px + var(--safe-b)); z-index: 4000; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; padding: 12px 20px; border-radius: 14px; background: rgba(30,16,50,.95); border: 1px solid rgba(181,107,255,.4); font-size: 14px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,.6); transition: all .35s cubic-bezier(.2,.8,.2,1); white-space: nowrap; }
         #toast.show { transform: translate(-50%, 0); opacity: 1; }
@@ -423,6 +475,13 @@
     </style>
 </head>
 <body>
+
+<div id="intro" aria-hidden="true">
+    <div class="in-glow"></div>
+    <div class="in-logo"><span style="--i:0;color:rgb(255, 255, 255)">S</span><span style="--i:1;color:rgb(237, 220, 255)">A</span><span style="--i:2;color:rgb(220, 185, 255)">Y</span><span style="--i:3;color:rgb(202, 149, 255)">D</span><span style="--i:4;color:rgb(185, 114, 255)">E</span><span style="--i:5;color:rgb(202, 104, 242)">L</span><span style="--i:6;color:rgb(229, 99, 226)">A</span><span style="--i:7;color:rgb(255, 95, 210)">Y</span><b>.</b></div>
+    <div class="in-line"></div>
+</div>
+<script>try { if (sessionStorage.getItem('saydelay_intro')) document.getElementById('intro').remove(); else sessionStorage.setItem('saydelay_intro', '1'); } catch (e) {}</script>
 
 <div class="bg-fx"></div>
 
@@ -520,6 +579,21 @@
 </div>
 
 <script>
+/* ---------- App offline verfügbar machen ---------- */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+/* ---------- Intro ---------- */
+(function () {
+    const el = document.getElementById('intro');
+    if (!el) return;
+    const done = () => el.remove();
+    el.addEventListener('click', () => el.classList.add('out'));
+    el.addEventListener('animationend', e => { if (e.target === el && e.animationName === 'introOut') done(); });
+    setTimeout(done, 4000);   // Sicherheitsnetz
+})();
+
 /* =====================================================================
    SAYDELAY – liest die Filme automatisch vom Raspberry Pi.
    Ordner-Aufbau (im Netzwerkordner "Filme"):
@@ -596,7 +670,10 @@ async function loadIndex() {
     try {
         const r = await fetch(MEDIA + '.library.json' + keyQ(), { cache: 'no-store' });
         if (r.status === 403) throw new Error('KEY');
-        if (r.ok) { const j = await r.json(); if (j && j.dirs) LIB = j.dirs; }
+        if (r.ok) {
+            const txt = await r.text(), j = JSON.parse(txt);
+            if (j && j.dirs) { LIB = j.dirs; store.set('saydelay_cache_lib', txt); }
+        }
     } catch (e) { if (e.message === 'KEY') throw e; }
 }
 
@@ -733,12 +810,54 @@ async function fetchState() {
         if (!r.ok) throw new Error();
         const st = await r.json();
         serverOK = true; lastState = st; applyLibraryState(st);
+        try { store.set('saydelay_cache_state', JSON.stringify({ profiles: st.profiles, hidden: st.hidden, order: st.order })); } catch (e) {}
         if (Array.isArray(st.profiles) && st.profiles.length) profiles = st.profiles;
         return st;
     } catch (e) { serverOK = false; return null; }
 }
 
 // Pi-Stand und Gerätestand zusammenführen: der neuere gewinnt, neuere lokale Stände gehen an den Pi
+/* ---------- Meine Liste (pro Profil, auf dem Pi gespeichert) ---------- */
+let myList = {};                 // Titel-ID -> { on, ts }
+let listPending = {};
+const listKey = () => 'saydelay_list_' + profileId;
+const inList = t => !!(myList[tid(t)] && myList[tid(t)].on);
+function saveListLocal() { try { localStorage.setItem(listKey(), JSON.stringify(myList)); } catch (e) {} }
+function flushList() {
+    const items = Object.values(listPending);
+    if (!items.length || !serverOK || !profileId) return;
+    listPending = {};
+    fetch(apiUrl('list'), { method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
+        body: JSON.stringify({ profile: profileId, items }) })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .catch(() => items.forEach(it => { if (!listPending[it.id]) listPending[it.id] = it; }));
+}
+function mergeList(st) {   // neuerer Stand gewinnt – auch beim Entfernen
+    const remote = (st && st.lists && st.lists[profileId]) || {};
+    let changed = false;
+    Object.entries(remote).forEach(([id, r]) => {
+        const cur = myList[id];
+        if (!cur || (r.ts || 0) > (cur.ts || 0)) { myList[id] = r; changed = true; }
+    });
+    if (st) Object.entries(myList).forEach(([id, l]) => {
+        const r = remote[id];
+        if (!r || (l.ts || 0) > (r.ts || 0)) listPending[id] = { id, ...l };
+    });
+    return changed;
+}
+function toggleList(t) {
+    const on = !inList(t);
+    myList[tid(t)] = { on, ts: Date.now() };
+    listPending[tid(t)] = { id: tid(t), ...myList[tid(t)] };
+    saveListLocal(); flushList(); refresh();
+    toast(on ? '♥ Zu „Meine Liste“ hinzugefügt' : 'Aus „Meine Liste“ entfernt');
+}
+const heartIcon = on => `<svg viewBox="0 0 24 24" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 7.9 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>`;
+function listButton(t) {
+    const on = inList(t);
+    return `<button class="btn ghost heart-btn ${on ? 'on' : ''}" id="a-list" aria-label="Meine Liste">${heartIcon(on)}<span>${on ? 'In meiner Liste' : 'Meine Liste'}</span></button>`;
+}
+
 function useProfile(pid, st) {
     profileId = pid; store.set('saydelay_profile', pid);
     let local = {};
@@ -755,6 +874,10 @@ function useProfile(pid, st) {
     });
     saveProgress();
     flushPush();
+    myList = {};
+    try { myList = JSON.parse(localStorage.getItem(listKey())) || {}; } catch (e) {}
+    listPending = {};
+    mergeList(st); saveListLocal(); flushList();
     updateProfileButton();
 }
 
@@ -864,6 +987,7 @@ const filters = [
     { key: 'all', label: 'Alle' },
     { key: 'movie', label: 'Filme' },
     { key: 'series', label: 'Serien' },
+    { key: 'mylist', label: '♥ Meine Liste' },
     { key: 'unwatched', label: 'Noch nicht gesehen' },
 ];
 
@@ -891,6 +1015,7 @@ function renderFilters() {
         movie: vis.filter(t => t.type === 'movie').length,
         series: vis.filter(t => t.type === 'series').length,
         unwatched: vis.filter(t => !isWatchedTitle(t)).length,
+        mylist: vis.filter(inList).length,
     };
     $('filters').innerHTML = filters.map(f => `<button class="chip ${currentFilter === f.key ? 'active' : ''}" data-f="${f.key}">${f.label}<span class="count">${counts[f.key]}</span></button>`).join('');
     $('filters').querySelectorAll('.chip').forEach(b => b.onclick = () => { currentFilter = b.dataset.f; render(); });
@@ -912,6 +1037,7 @@ function cardHTML(t, i) {
         else if (st.done > 0) extra = `<div class="bar"><i style="width:${st.done / st.total * 100}%"></i></div>`;
     }
     if (!extra.includes('watched-dot') && isNew(t.mtime) && !isWatchedTitle(t)) extra += `<span class="badge new">Neu</span>`;
+    if (inList(t)) extra += `<span class="card-heart">${heartIcon(true)}</span>`;
     return `
         <div class="card" tabindex="0" data-i="${titles.indexOf(t)}" style="animation-delay:${Math.min(i * 20, 160)}ms">
             <div class="poster">
@@ -950,11 +1076,16 @@ function render() {
     if (currentFilter === 'movie') items = items.filter(t => t.type === 'movie');
     if (currentFilter === 'series') items = items.filter(t => t.type === 'series');
     if (currentFilter === 'unwatched') items = items.filter(t => !isWatchedTitle(t));
+    if (currentFilter === 'mylist') items = items.filter(inList).sort((a, b) => (myList[tid(b)].ts || 0) - (myList[tid(a)].ts || 0));
     $('result-info').textContent = `${items.length} Titel`;
 
     const content = $('content');
     if (!visibleTitles().length) {
         content.innerHTML = `<div class="empty"><div class="big">📂</div>Noch keine Filme da.<br>Zieh deine Filme in den Netzwerkordner <code>Filme</code> → Unterordner <code>Filme</code> oder <code>Serien</code>.</div>`;
+        return;
+    }
+    if (!items.length && currentFilter === 'mylist' && !q) {
+        content.innerHTML = `<div class="empty"><div class="big">♡</div>Deine Liste ist noch leer.<br>Öffne einen Film oder eine Serie und tippe auf <b>Meine Liste</b>.</div>`;
         return;
     }
     if (!items.length) {
@@ -965,6 +1096,9 @@ function render() {
     let html = '';
     if (!q && currentFilter === 'all') {
         html += continueHTML();
+        const mine = items.filter(inList).sort((a, b) => (myList[tid(b)].ts || 0) - (myList[tid(a)].ts || 0));
+        let i0 = 0;
+        if (mine.length) html += `<section class="section"><h3 class="section-title">Meine Liste</h3><div class="row row-cards">${mine.map(t => cardHTML(t, i0++)).join('')}</div></section>`;
         const series = items.filter(t => t.type === 'series');
         const movies = items.filter(t => t.type === 'movie');
         let i = 0;
@@ -1011,9 +1145,9 @@ function openMovie(t) {
     const resume = p && p.t > 5 && !done;
     $('hero').innerHTML = heroHTML(t.name, t.cover,
         `<span class="tag purple">Film</span>${p && p.d ? `<span class="tag">${fmtTime(p.d)}</span>` : ''}${done ? '<span class="tag green">✓ Gesehen</span>' : ''}`,
-        resume
+        (resume
             ? `<button class="btn" id="a-resume">${playIcon}Fortsetzen bei ${fmtTime(p.t)}</button><button class="btn ghost" id="a-start">Von vorne</button>`
-            : `<button class="btn" id="a-start">${playIcon}${done ? 'Nochmal ansehen' : 'Jetzt ansehen'}</button>`);
+            : `<button class="btn" id="a-start">${playIcon}${done ? 'Nochmal ansehen' : 'Jetzt ansehen'}</button>`) + listButton(t));
     $('detail-body').innerHTML = `
         <div class="ep ${done ? 'watched' : ''}" style="cursor:default">
             <div class="ep-main"><div class="ep-title">Als gesehen markieren</div><div class="ep-sub">${done ? '✓ Gesehen' : 'Noch nicht gesehen'}</div></div>
@@ -1022,6 +1156,7 @@ function openMovie(t) {
     if (resume) $('a-resume').onclick = () => playId(t.id);
     $('a-start').onclick = () => playId(t.id, true);
     $('a-toggle').onclick = () => { setDone(t.id, !done); refresh(); };
+    $('a-list').onclick = () => toggleList(t);
     if (!$('detail').classList.contains('open')) openSheet();
 }
 
@@ -1035,8 +1170,9 @@ function openSeries(t, seasonIdx = null) {
 
     $('hero').innerHTML = heroHTML(t.name, season.cover || t.cover,
         `<span class="tag purple">Serie</span><span class="tag">${t.seasons.length > 1 ? t.seasons.length + ' Staffeln' : 'Staffel ' + season.number}</span><span class="tag ${st.done === st.total ? 'green' : ''}">${st.done}/${st.total} gesehen</span>`,
-        nx ? `<button class="btn" id="a-next">${playIcon}${resumeP && resumeP.t > 5 ? 'Weiterschauen' : st.done ? 'Weiter' : 'Abspielen'} · S${t.seasons[nx.si].number} ${esc(nx.e.title)}</button>` : '');
+        (nx ? `<button class="btn" id="a-next">${playIcon}${resumeP && resumeP.t > 5 ? 'Weiterschauen' : st.done ? 'Weiter' : 'Abspielen'} · S${t.seasons[nx.si].number} ${esc(nx.e.title)}</button>` : '') + listButton(t));
     if (nx) $('a-next').onclick = () => playId(nx.e.id);
+    $('a-list').onclick = () => toggleList(t);
 
     let body = '';
     if (t.seasons.length > 1) body += `<div class="seasons">${t.seasons.map((s, i) => `<button class="chip ${i === currentSeason ? 'active' : ''}" data-s="${i}">Staffel ${s.number}</button>`).join('')}</div>`;
@@ -1214,7 +1350,9 @@ document.addEventListener('visibilitychange', async () => {
     const remote = (st.progress && st.progress[profileId]) || {};
     let changed = false;
     Object.entries(remote).forEach(([id, r]) => { if (!progress[id] || (r.ts || 0) > (progress[id].ts || 0)) { progress[id] = r; changed = true; } });
+    if (mergeList(st)) { saveListLocal(); changed = true; }
     if (changed) { saveProgress(); refresh(); }
+    flushList();
     updateProfileButton();
 });
 
@@ -1331,30 +1469,53 @@ async function saveAdmin() {
 }
 function adminReset() { orderList = []; renderAdmin(); clearTimeout(adminSaveTimer); adminSaveTimer = setTimeout(saveAdmin, 300); }
 
+function readCache(k) { try { return JSON.parse(store.get(k) || 'null'); } catch (e) { return null; } }
+
 function start(fromLogin) {
     if (!MEDIA) MEDIA = piUrl() ? piUrl() + '/media/' : '';
     if (!store.get('saydelay_key')) return showLock();
-    if (!fromLogin) $('content').innerHTML = '<div class="grid">' + '<div class="skel"></div>'.repeat(6) + '</div>';
-    // Filmliste und Profile gleichzeitig laden
+
+    // 1) Sofort: letzte bekannte Filmliste vom Gerät anzeigen (klappt auch ohne Internet)
+    let fromCache = false;
+    const cLib = !fromLogin && readCache('saydelay_cache_lib');
+    if (cLib && cLib.dirs) {
+        fromCache = true;
+        LIB = cLib.dirs;
+        const cSt = readCache('saydelay_cache_state');
+        if (cSt) { applyLibraryState(cSt); if (Array.isArray(cSt.profiles) && cSt.profiles.length) profiles = cSt.profiles; }
+        hideLock();
+        loadLibrary().then(() => {
+            updateAdminButton();
+            if (profileId && profiles.find(p => p.id === profileId)) { useProfile(profileId, null); render(); }
+            else { render(); showProfiles(); }
+        }).catch(() => {});
+    } else if (!fromLogin) {
+        $('content').innerHTML = '<div class="grid">' + '<div class="skel"></div>'.repeat(6) + '</div>';
+    }
+
+    // 2) Im Hintergrund: aktuelle Daten vom Pi holen (Filmliste und Profile gleichzeitig)
     Promise.all([
         loadIndex().then(() => list('')).then(() => { hideLock(); return loadLibrary(); }),
         fetchState(),
     ]).then(([, st]) => {
         updateAdminButton();
-        if (!profileId || !profiles.find(p => p.id === profileId)) { render(); showProfiles(); }
-        else { useProfile(profileId, st); render(); }
+        const picking = $('profiles').classList.contains('show');
+        if (!profileId || !profiles.find(p => p.id === profileId)) { render(); if (!picking) showProfiles(); else renderProfiles(); }
+        else { useProfile(profileId, st); if (picking) renderProfiles(); refresh(); }
         if (openAdminAfterLogin) { openAdminAfterLogin = false; showAdmin(); }
     }).catch(async err => {
+        // Bei der Anmeldung: war es vielleicht das Admin-Passwort?
+        if (fromLogin && lastPw) {
+            const pw = lastPw; lastPw = '';
+            const res = await tryAdminLogin(pw);
+            if (res === true) { openAdminAfterLogin = true; return start(true); }
+            if (res === 'locked') { store.set('saydelay_key', ''); return showLock('Zu viele Versuche – warte 10 Minuten', true); }
+        }
         if (err.message === 'KEY') {
             store.set('saydelay_key', '');
-            if (fromLogin && lastPw) {
-                const res = await tryAdminLogin(lastPw);
-                lastPw = '';
-                if (res === true) { openAdminAfterLogin = true; return start(true); }
-                if (res === 'locked') return showLock('Zu viele Versuche – warte 10 Minuten', true);
-            }
             showLock('Falsches Passwort', fromLogin);
         }
+        else if (fromCache) toast('Offline – du siehst die zuletzt geladene Liste');
         else showLock('Keine Verbindung zum Pi – ist er eingeschaltet?', true);
     });
 }
