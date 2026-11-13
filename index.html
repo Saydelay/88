@@ -119,20 +119,20 @@
 
         /* ---------- Grid ---------- */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 24px; }
-        .card { position: relative; cursor: pointer; border-radius: var(--radius); outline: none; opacity: 0; transform: translateY(14px); animation: in .5s cubic-bezier(.2,.8,.2,1) forwards; }
-        @keyframes in { to { opacity: 1; transform: none; } }
+        .card { position: relative; cursor: pointer; border-radius: var(--radius); outline: none; opacity: 0; animation: in .5s ease forwards; }
+        @keyframes in { to { opacity: 1; } }
         .poster {
             position: relative; aspect-ratio: 2 / 3; border-radius: var(--radius); overflow: hidden;
             background: linear-gradient(145deg, #1d0f33, #0c0616); border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,.45); transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .45s, border-color .45s; isolation: isolate;
+            box-shadow: 0 10px 30px rgba(0,0,0,.45); transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .45s, border-color .45s;
         }
-        .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s; }
+        .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s; image-rendering: auto; }
         .poster img.loaded { opacity: 1; }
         .poster::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 35%); pointer-events: none; }
         .poster .shine { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.18) 48%, transparent 62%); transform: translateX(-100%); transition: transform .8s, opacity .3s; }
         .play-btn { position: absolute; z-index: 3; left: 50%; top: 50%; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: rgba(181,107,255,.9); box-shadow: 0 0 40px var(--glow); transform: translate(-50%,-50%) scale(.6); opacity: 0; transition: all .35s cubic-bezier(.2,.8,.2,1); }
         .play-btn svg { width: 22px; height: 22px; margin-left: 3px; fill: #fff; }
-        .badge { position: absolute; z-index: 3; top: 10px; left: 10px; padding: 5px 10px; border-radius: 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; background: rgba(7,3,13,.65); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.12); }
+        .badge { position: absolute; z-index: 3; top: 10px; left: 10px; padding: 5px 10px; border-radius: 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; background: rgba(7,3,13,.82); border: 1px solid rgba(255,255,255,.12); }
         .badge.series { color: var(--purple); }
         .badge.new { left: auto; right: 10px; color: var(--pink); }
         .watched-dot { position: absolute; z-index: 3; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #05230f; font-size: 14px; font-weight: 900; box-shadow: 0 4px 14px rgba(62,224,143,.45); }
@@ -582,11 +582,19 @@ function fallbackCover(name) {
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#3b1270'/><stop offset='1' stop-color='#0c0616'/></linearGradient></defs><rect width='600' height='900' fill='url(#g)'/><text x='300' y='${430 - (lines.length - 1) * 31}' fill='white' font-family='Arial,sans-serif' font-size='52' font-weight='800' text-anchor='middle'>${text}</text></svg>`;
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
-const coverSrc = (cover, name) => cover ? url(cover) : fallbackCover(name);
+// Der Pi legt unter .thumbs/ sauber verkleinerte Vorschaubilder (600 px breit) an
+const thumbSrc = cover => url('.thumbs/' + cover + '.jpg');
+const coverSrc = (cover, name) => cover ? thumbSrc(cover) : fallbackCover(name);
+function imgFail(img) {
+    // 1. Versuch: Vorschaubild -> 2. Versuch: Original -> sonst Platzhalter
+    if (img.dataset.orig && img.src.indexOf('/.thumbs/') !== -1) { img.src = img.dataset.orig; return; }
+    img.onerror = null; img.src = img.dataset.fb; img.classList.add('loaded');
+}
 function imgTag(cover, name, extra = '') {
-    return `<img src="${esc(coverSrc(cover, name))}" alt="${esc(name)}" loading="lazy" decoding="async" ${extra}
-        onload="this.classList.add('loaded')"
-        onerror="this.onerror=null;this.src='${fallbackCover(name).replace(/'/g, '%27')}';this.classList.add('loaded')">`;
+    const src = coverSrc(cover, name);
+    return `<img src="${esc(src)}" alt="${esc(name)}" loading="lazy" decoding="async" ${extra}
+        data-orig="${cover ? esc(url(cover)) : ''}" data-fb="${esc(fallbackCover(name))}"
+        onload="this.classList.add('loaded')" onerror="imgFail(this)">`;
 }
 
 /* ---------- Übersicht ---------- */
