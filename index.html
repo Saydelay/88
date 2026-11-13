@@ -295,6 +295,36 @@
             #player video { position: relative; inset: auto; flex: 1 1 auto; height: 0; min-height: 0; width: 100%; }
         }
 
+        /* ---------- Profile ---------- */
+        #profiles {
+            position: fixed; inset: 0; z-index: 4500; display: none; align-items: center; justify-content: center; overflow-y: auto;
+            padding: calc(30px + var(--safe-t)) calc(20px + var(--safe-r)) calc(30px + var(--safe-b)) calc(20px + var(--safe-l));
+            background: radial-gradient(circle at 30% 20%, #3b1270 0%, transparent 55%), radial-gradient(circle at 80% 90%, #5a0f4f 0%, transparent 50%), var(--bg);
+        }
+        #profiles.show { display: flex; animation: fade .4s ease; }
+        .pf-box { width: 100%; max-width: 760px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .pf-box h2 { font-size: clamp(26px, 5vw, 42px); font-weight: 800; letter-spacing: -1px; margin: 26px 0 34px; }
+        .pf-grid { display: flex; justify-content: center; gap: clamp(18px, 4vw, 40px); flex-wrap: wrap; }
+        .pf { display: flex; flex-direction: column; align-items: center; gap: 14px; cursor: pointer; outline: none; width: clamp(96px, 24vw, 150px); }
+        .pf-av {
+            display: grid; place-items: center; width: clamp(96px, 24vw, 150px); aspect-ratio: 1; border-radius: 28%;
+            background: linear-gradient(135deg, var(--a), var(--b)); color: #fff; font-weight: 900; font-size: clamp(40px, 10vw, 64px);
+            box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 3px solid transparent; transition: transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s, box-shadow .3s;
+        }
+        .pf-name { font-size: 16px; font-weight: 600; color: var(--muted); transition: color .3s; }
+        .pf.current .pf-av { border-color: rgba(255,255,255,.55); }
+        .pf.current .pf-name { color: #fff; }
+        @media (hover: hover) { .pf:hover .pf-av { transform: translateY(-6px) scale(1.04); border-color: #fff; box-shadow: 0 20px 50px rgba(0,0,0,.6); } .pf:hover .pf-name { color: #fff; } }
+        .pf:focus-visible .pf-av { border-color: #fff; }
+        .pf:active .pf-av { transform: scale(.96); }
+        .pf-name-in { width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--purple); background: rgba(255,255,255,.08); color: #fff; font: inherit; font-size: 16px; text-align: center; }
+        .pf-name-in:focus { outline: none; box-shadow: 0 0 0 3px rgba(181,107,255,.3); }
+        .pf-edit { margin-top: 42px; padding: 11px 22px; border-radius: 12px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: 14px; letter-spacing: .5px; cursor: pointer; transition: all .25s; }
+        .pf-edit:hover { color: #fff; border-color: #fff; }
+        .pf-btn { padding: 0; overflow: hidden; }
+        .pf-btn .pf-av { box-shadow: none; border: 0; }
+        @media (max-width: 640px) { .pf-btn { margin-left: auto; } .pf-btn + .lock-out { margin-left: 0; } }
+
         /* ---------- Toast ---------- */
         #toast { position: fixed; left: 50%; bottom: calc(24px + var(--safe-b)); z-index: 4000; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; padding: 12px 20px; border-radius: 14px; background: rgba(30,16,50,.95); border: 1px solid rgba(181,107,255,.4); font-size: 14px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,.6); transition: all .35s cubic-bezier(.2,.8,.2,1); white-space: nowrap; }
         #toast.show { transform: translate(-50%, 0); opacity: 1; }
@@ -356,6 +386,7 @@
             <input type="search" id="search" placeholder="Filme oder Serien suchen…" autocomplete="off" enterkeyhint="search">
             <button id="search-clear" aria-label="Suche leeren">✕</button>
         </div>
+        <button class="lock-out pf-btn" id="pf-btn" onclick="showProfiles()" title="Profil wechseln" aria-label="Profil wechseln"></button>
         <button class="lock-out" onclick="logout()" title="Sperren" aria-label="Sperren">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
         </button>
@@ -398,6 +429,15 @@
 </div>
 
 <div id="toast"></div>
+
+<div id="profiles">
+    <div class="pf-box">
+        <div class="lock-logo">SAYDELAY<span>.</span></div>
+        <h2 id="pf-title">Wer schaut?</h2>
+        <div class="pf-grid" id="pf-grid"></div>
+        <button class="pf-edit" id="pf-edit">Profile bearbeiten</button>
+    </div>
+</div>
 
 <div id="lock">
     <form class="lock-box" id="lock-form" autocomplete="on">
@@ -554,12 +594,126 @@ async function loadLibrary() {
 }
 
 /* ---------- Fortschritt (pro Gerät gespeichert) ---------- */
+/* ---------- Profile & Fortschritt (wird auf dem Pi gespeichert) ---------- */
 let progress = {};
-try { progress = JSON.parse(localStorage.getItem('saydelay_progress')) || {}; } catch (e) {}
-const saveProgress = () => { try { localStorage.setItem('saydelay_progress', JSON.stringify(progress)); } catch (e) {} };
+let profiles = [{ id: 'p1', name: 'Profil 1' }, { id: 'p2', name: 'Profil 2' }, { id: 'p3', name: 'Profil 3' }];
+let profileId = store.get('saydelay_profile');
+let serverOK = false, lastState = null;
+const PROFILE_COLORS = { p1: ['#7c3aed', '#ff5fd2'], p2: ['#0ea5e9', '#22d3ee'], p3: ['#f97316', '#ef4444'] };
+const localKey = () => 'saydelay_progress_' + profileId;
+const apiUrl = path => MEDIA.replace(/media\/$/, 'api/') + path + keyQ();
+
+function saveProgress(id) {
+    try { localStorage.setItem(localKey(), JSON.stringify(progress)); } catch (e) {}
+    if (id && progress[id]) queuePush(id);
+}
+
+let pending = {}, pushTimer;
+function queuePush(id) { pending[id] = { id, ...progress[id] }; clearTimeout(pushTimer); pushTimer = setTimeout(() => flushPush(), 1500); }
+function flushPush(beacon) {
+    clearTimeout(pushTimer);
+    const items = Object.values(pending);
+    if (!items.length || !serverOK || !profileId) return;
+    pending = {};
+    const body = JSON.stringify({ profile: profileId, items });
+    if (beacon && navigator.sendBeacon && navigator.sendBeacon(apiUrl('progress'), new Blob([body], { type: 'text/plain' }))) return;
+    fetch(apiUrl('progress'), { method: 'POST', body, headers: { 'Content-Type': 'text/plain' }, keepalive: true })
+        .catch(() => items.forEach(it => { if (!pending[it.id]) pending[it.id] = it; }));
+}
+
+async function fetchState() {
+    try {
+        const r = await fetch(apiUrl('state'), { cache: 'no-store' });
+        if (!r.ok) throw new Error();
+        const st = await r.json();
+        serverOK = true; lastState = st;
+        if (Array.isArray(st.profiles) && st.profiles.length) profiles = st.profiles;
+        return st;
+    } catch (e) { serverOK = false; return null; }
+}
+
+// Pi-Stand und Gerätestand zusammenführen: der neuere gewinnt, neuere lokale Stände gehen an den Pi
+function useProfile(pid, st) {
+    profileId = pid; store.set('saydelay_profile', pid);
+    let local = {};
+    try { local = JSON.parse(localStorage.getItem(localKey())) || {}; } catch (e) {}
+    if (pid === 'p1' && !store.get('saydelay_migrated')) {   // Fortschritt von vor den Profilen -> Profil 1
+        try { Object.assign(local, JSON.parse(localStorage.getItem('saydelay_progress')) || {}); } catch (e) {}
+        store.set('saydelay_migrated', '1');
+    }
+    const remote = (st && st.progress && st.progress[pid]) || {};
+    progress = { ...remote };
+    Object.entries(local).forEach(([id, p]) => {
+        const r = remote[id];
+        if (!r || (p.ts || 0) > (r.ts || 0)) { progress[id] = p; if (st) pending[id] = { id, ...p }; }
+    });
+    saveProgress();
+    flushPush();
+    updateProfileButton();
+}
+
+/* ---------- Profil-Auswahl ---------- */
+const profName = id => (profiles.find(p => p.id === id) || {}).name || 'Profil';
+function avatarHTML(id, size) {
+    const [a, b] = PROFILE_COLORS[id] || PROFILE_COLORS.p1;
+    const nm = profName(id).trim(), num = nm.match(/^profil\s*(\d+)$/i);
+    const letter = esc(num ? num[1] : (nm.charAt(0).toUpperCase() || '?'));
+    return `<span class="pf-av" style="--a:${a};--b:${b};${size ? `width:${size}px;height:${size}px;font-size:${size * .45}px;border-radius:${size * .3}px` : ''}">${letter}</span>`;
+}
+function updateProfileButton() { const b = $('pf-btn'); if (b) { b.innerHTML = avatarHTML(profileId, 30); b.title = 'Profil: ' + profName(profileId); } }
+
+let pfEditing = false;
+function showProfiles() {
+    flushPush();
+    pfEditing = false;
+    renderProfiles();
+    $('profiles').classList.add('show');
+    document.body.classList.add('is-locked');
+}
+function renderProfiles() {
+    $('pf-title').textContent = pfEditing ? 'Profile bearbeiten' : 'Wer schaut?';
+    $('pf-edit').textContent = pfEditing ? 'Fertig' : 'Profile bearbeiten';
+    $('pf-grid').innerHTML = profiles.map(p => `
+        <div class="pf ${p.id === profileId && !pfEditing ? 'current' : ''}" data-id="${p.id}" tabindex="0">
+            ${avatarHTML(p.id)}
+            ${pfEditing
+                ? `<input class="pf-name-in" value="${esc(p.name)}" maxlength="20" data-id="${p.id}">`
+                : `<span class="pf-name">${esc(p.name)}</span>`}
+        </div>`).join('');
+    $('pf-grid').querySelectorAll('.pf').forEach(el => {
+        if (pfEditing) return;
+        const pick = () => pickProfile(el.dataset.id);
+        el.onclick = pick;
+        el.onkeydown = e => { if (e.key === 'Enter') pick(); };
+    });
+    $('pf-grid').querySelectorAll('.pf-name-in').forEach(inp => {
+        const saveName = () => {
+            const name = inp.value.trim().slice(0, 20);
+            const pr = profiles.find(p => p.id === inp.dataset.id);
+            if (!name || !pr || pr.name === name) { inp.value = pr ? pr.name : ''; return; }
+            pr.name = name;
+            if (serverOK) fetch(apiUrl('profile'), { method: 'POST', body: JSON.stringify({ profile: pr.id, name }), headers: { 'Content-Type': 'text/plain' } }).catch(() => {});
+            else toast('Name nur auf diesem Gerät geändert');
+        };
+        inp.onchange = saveName;
+        inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
+    });
+}
+$('pf-edit').onclick = () => {
+    if (pfEditing) document.querySelectorAll('.pf-name-in').forEach(i => i.onchange && i.onchange());
+    pfEditing = !pfEditing; renderProfiles(); updateProfileButton();
+};
+async function pickProfile(pid) {
+    const st = await fetchState();
+    useProfile(pid, st);
+    $('profiles').classList.remove('show');
+    document.body.classList.remove('is-locked');
+    render();
+    toast('Hallo ' + profName(pid) + ' 👋');
+}
 const isDone = id => !!(progress[id] && progress[id].done);
 const pct = id => { const p = progress[id]; return p && p.d ? Math.min(100, p.t / p.d * 100) : 0; };
-function setDone(id, v) { progress[id] = { ...(progress[id] || {}), done: v, t: v ? 0 : (progress[id] || {}).t || 0, ts: Date.now() }; saveProgress(); }
+function setDone(id, v) { progress[id] = { ...(progress[id] || {}), done: v, t: v ? 0 : (progress[id] || {}).t || 0, ts: Date.now() }; saveProgress(id); }
 
 function seriesStats(t) {
     const eps = t.seasons.flatMap(s => s.episodes);
@@ -826,7 +980,7 @@ function playId(id, fromStart = false) {
         if (startAt) video.currentTime = startAt;
         progress[id] = { ...(progress[id] || {}), d: video.duration, ts: Date.now() };
         if (fromStart) progress[id].done = false;
-        saveProgress();
+        saveProgress(id);
     };
     if (!$('player').classList.contains('open')) {
         $('player').classList.add('open'); document.body.classList.add('locked');
@@ -841,7 +995,7 @@ function saveNow() {
     const id = playing.id, t = video.currentTime, d = video.duration;
     const done = t / d > 0.92 || (progress[id] && progress[id].done && t < 5);
     progress[id] = { t: done ? 0 : t, d, done: !!done, ts: Date.now() };
-    saveProgress();
+    saveProgress(id);
 }
 
 video.addEventListener('timeupdate', () => { if (Date.now() - lastSave > 4000) { lastSave = Date.now(); saveNow(); } });
@@ -850,7 +1004,7 @@ video.addEventListener('pause', saveNow);
 ['playing', 'canplay', 'seeked', 'pause', 'error', 'emptied'].forEach(ev => video.addEventListener(ev, () => $('p-spin').classList.remove('show')));
 video.addEventListener('ended', () => {
     if (!playing) return;
-    progress[playing.id] = { ...(progress[playing.id] || {}), t: 0, done: true, ts: Date.now() }; saveProgress();
+    progress[playing.id] = { ...(progress[playing.id] || {}), t: 0, done: true, ts: Date.now() }; saveProgress(playing.id);
     const nx = neighbour(playing.id);
     if (nx && !IS_IPHONE) { toast('Nächste Folge startet…'); setTimeout(() => playing && playId(nx.id, true), 2500); }
 });
@@ -925,8 +1079,19 @@ document.addEventListener('keydown', e => {
 function resetAll() { $('search').value = ''; currentFilter = 'all'; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 $('search').addEventListener('input', render);
 $('search-clear').onclick = () => { $('search').value = ''; render(); $('search').focus(); };
-window.addEventListener('beforeunload', saveNow);
-document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+window.addEventListener('pagehide', () => { saveNow(); flushPush(true); });
+document.addEventListener('visibilitychange', async () => {
+    if (document.hidden) { saveNow(); flushPush(true); return; }
+    // zurück auf der Seite: Fortschritt von anderen Geräten übernehmen
+    if (!profileId || playing || !store.get('saydelay_key') || $('profiles').classList.contains('show')) return;
+    const st = await fetchState();
+    if (!st) return;
+    const remote = (st.progress && st.progress[profileId]) || {};
+    let changed = false;
+    Object.entries(remote).forEach(([id, r]) => { if (!progress[id] || (r.ts || 0) > (progress[id].ts || 0)) { progress[id] = r; changed = true; } });
+    if (changed) { saveProgress(); refresh(); }
+    updateProfileButton();
+});
 
 /* ---------- Sperrbildschirm ---------- */
 function showLock(msg, shake) {
@@ -955,7 +1120,10 @@ function start(fromLogin) {
     if (!MEDIA) MEDIA = piUrl() ? piUrl() + '/media/' : '';
     if (!store.get('saydelay_key')) return showLock();
     if (!fromLogin) $('content').innerHTML = '<div class="grid">' + '<div class="skel"></div>'.repeat(6) + '</div>';
-    list('').then(() => { hideLock(); return loadLibrary(); }).then(render).catch(err => {
+    list('').then(() => { hideLock(); return Promise.all([loadLibrary(), fetchState()]); }).then(([, st]) => {
+        if (!profileId || !profiles.find(p => p.id === profileId)) { render(); showProfiles(); }
+        else { useProfile(profileId, st); render(); }
+    }).catch(err => {
         if (err.message === 'KEY') { store.set('saydelay_key', ''); showLock('Falsches Passwort', fromLogin); }
         else showLock('Keine Verbindung zum Pi – ist er eingeschaltet?', true);
     });
