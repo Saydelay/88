@@ -500,7 +500,15 @@ const POSTER_NAMES = ['poster', 'cover', 'folder', 'thumb'];
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const enc = p => p.split('/').map(encodeURIComponent).join('/');
-const url = p => MEDIA + enc(p) + keyQ();
+// Versionsnummer pro Datei (Größe + Änderungszeit): ändert sich die Datei, ändert sich die Adresse
+// -> der Browser MUSS das neue Bild laden und zeigt nie ein altes aus dem Speicher.
+const ver = {};
+function url(p) {
+    const base = p.replace(/^\.thumbs\//, '').replace(/\.jpg$/, '');
+    const v = ver[p] || (p.startsWith('.thumbs/') ? ver[base] : '');
+    const q = keyQ();
+    return MEDIA + enc(p) + q + (v ? (q ? '&' : '?') + 'v=' + v : '');
+}
 const stripExt = n => n.replace(/\.[^.]+$/, '');
 const natural = (a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' });
 const fmtTime = s => { s = Math.floor(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
@@ -509,7 +517,9 @@ async function list(path) {
     const r = await fetch(MEDIA + (path ? enc(path) + '/' : '') + keyQ(), { cache: 'no-store' });
     if (r.status === 403) throw new Error('KEY');
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    return (await r.json()).filter(e => !e.name.startsWith('.'));
+    const entries = (await r.json()).filter(e => !e.name.startsWith('.'));
+    entries.forEach(e => { if (e.type === 'file') ver[(path ? path + '/' : '') + e.name] = (e.size || 0).toString(36) + (e.mtime ? Date.parse(e.mtime).toString(36) : ''); });
+    return entries;
 }
 
 function findPoster(entries, base, dir) {
