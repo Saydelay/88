@@ -323,7 +323,45 @@
         .pf-edit:hover { color: #fff; border-color: #fff; }
         .pf-btn { padding: 0; overflow: hidden; }
         .pf-btn .pf-av { box-shadow: none; border: 0; }
-        @media (max-width: 640px) { .pf-btn { margin-left: auto; } .pf-btn + .lock-out { margin-left: 0; } }
+        @media (max-width: 640px) { .logo { margin-right: auto; } .topbar .lock-out { margin-left: 0; } }
+
+        /* ---------- Admin ---------- */
+        #admin { position: fixed; inset: 0; z-index: 4800; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            padding: calc(24px + var(--safe-t)) calc(16px + var(--safe-r)) calc(30px + var(--safe-b)) calc(16px + var(--safe-l));
+            background: radial-gradient(circle at 20% 0%, #2a0f52 0%, transparent 50%), var(--bg); }
+        #admin.show { display: block; animation: fade .3s ease; }
+        .ad-box { max-width: 760px; margin: 0 auto; }
+        .ad-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+        .ad-kicker { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple); }
+        .ad-head h2 { margin: 4px 0 0; font-size: clamp(24px, 4.5vw, 34px); font-weight: 900; letter-spacing: -.8px; }
+        .ad-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .ad-saved { font-size: 13px; font-weight: 700; color: var(--green); opacity: 0; transition: opacity .3s; white-space: nowrap; }
+        .ad-saved.show { opacity: 1; }
+        .ad-info { color: var(--muted); font-size: 13px; margin: 14px 2px 12px; }
+        .ad-list { display: flex; flex-direction: column; gap: 8px; }
+        .ad-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); transition: opacity .25s, background .25s; }
+        .ad-row.is-hidden { opacity: .45; }
+        .ad-pos { width: 22px; text-align: center; font-size: 13px; font-weight: 800; color: var(--muted); flex: 0 0 auto; }
+        .ad-img { width: 40px; aspect-ratio: 2/3; border-radius: 7px; overflow: hidden; background: #1d0f33; flex: 0 0 auto; }
+        .ad-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .ad-main { flex: 1; min-width: 0; }
+        .ad-title { font-weight: 700; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ad-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .ad-row.is-hidden .ad-sub { color: #ff8aa6; }
+        .ad-btn { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-2); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; display: grid; place-items: center; transition: all .2s; }
+        .ad-btn svg { width: 18px; height: 18px; }
+        .ad-btn:hover:not(:disabled) { border-color: var(--purple); background: rgba(181,107,255,.18); }
+        .ad-btn:disabled { opacity: .25; cursor: default; }
+        .ad-btn.ad-eye { color: var(--green); }
+        .ad-btn.ad-eye.off { color: #ff6b8b; }
+        .ad-foot { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 26px; }
+        .ad-foot .pf-edit { margin-top: 0; }
+        @media (max-width: 640px) {
+            .ad-btn { width: 34px; height: 34px; font-size: 15px; }
+            .ad-btn[data-a="top"] { display: none; }
+            .ad-pos { display: none; }
+            .ad-row { gap: 7px; }
+        }
 
         /* ---------- Toast ---------- */
         #toast { position: fixed; left: 50%; bottom: calc(24px + var(--safe-b)); z-index: 4000; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; padding: 12px 20px; border-radius: 14px; background: rgba(30,16,50,.95); border: 1px solid rgba(181,107,255,.4); font-size: 14px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,.6); transition: all .35s cubic-bezier(.2,.8,.2,1); white-space: nowrap; }
@@ -386,6 +424,9 @@
             <input type="search" id="search" placeholder="Filme oder Serien suchen…" autocomplete="off" enterkeyhint="search">
             <button id="search-clear" aria-label="Suche leeren">✕</button>
         </div>
+        <button class="lock-out" id="admin-btn" onclick="showAdmin()" title="Admin-Panel" aria-label="Admin-Panel" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        </button>
         <button class="lock-out pf-btn" id="pf-btn" onclick="showProfiles()" title="Profil wechseln" aria-label="Profil wechseln"></button>
         <button class="lock-out" onclick="logout()" title="Sperren" aria-label="Sperren">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
@@ -429,6 +470,22 @@
 </div>
 
 <div id="toast"></div>
+
+<div id="admin">
+    <div class="ad-box">
+        <div class="ad-head">
+            <div><div class="ad-kicker">Admin-Panel</div><h2>Bibliothek verwalten</h2></div>
+            <button class="btn" onclick="closeAdmin()">Fertig</button>
+        </div>
+        <div class="ad-bar"><div class="chips" id="ad-tabs"></div><span class="ad-saved" id="ad-saved">✓ Gespeichert</span></div>
+        <div class="ad-info" id="ad-info"></div>
+        <div class="ad-list" id="ad-list"></div>
+        <div class="ad-foot">
+            <button class="pf-edit" onclick="adminReset()">Reihenfolge zurücksetzen (A–Z)</button>
+            <button class="pf-edit" onclick="leaveAdmin()">Admin-Modus beenden</button>
+        </div>
+    </div>
+</div>
 
 <div id="profiles">
     <div class="pf-box">
@@ -636,7 +693,7 @@ async function fetchState() {
         const r = await fetch(apiUrl('state'), { cache: 'no-store' });
         if (!r.ok) throw new Error();
         const st = await r.json();
-        serverOK = true; lastState = st;
+        serverOK = true; lastState = st; applyLibraryState(st);
         if (Array.isArray(st.profiles) && st.profiles.length) profiles = st.profiles;
         return st;
     } catch (e) { serverOK = false; return null; }
@@ -770,12 +827,30 @@ const filters = [
     { key: 'unwatched', label: 'Noch nicht gesehen' },
 ];
 
+/* ---------- Ausblenden & Reihenfolge (vom Admin festgelegt, auf dem Pi gespeichert) ---------- */
+let hiddenSet = new Set(), orderList = [];
+const tid = t => t.type === 'movie' ? t.id : 'Serien/' + t.name;
+function applyLibraryState(st) {
+    if (!st) return;
+    hiddenSet = new Set(Array.isArray(st.hidden) ? st.hidden : []);
+    orderList = Array.isArray(st.order) ? st.order : [];
+}
+function sortTitles(list) {
+    const pos = new Map(orderList.map((id, i) => [id, i]));
+    return [...list].sort((a, b) => {
+        const pa = pos.has(tid(a)) ? pos.get(tid(a)) : Infinity, pb = pos.has(tid(b)) ? pos.get(tid(b)) : Infinity;
+        return pa !== pb ? pa - pb : natural(a.name, b.name);
+    });
+}
+const visibleTitles = () => sortTitles(titles.filter(t => !hiddenSet.has(tid(t))));
+
 function renderFilters() {
+    const vis = visibleTitles();
     const counts = {
-        all: titles.length,
-        movie: titles.filter(t => t.type === 'movie').length,
-        series: titles.filter(t => t.type === 'series').length,
-        unwatched: titles.filter(t => !isWatchedTitle(t)).length,
+        all: vis.length,
+        movie: vis.filter(t => t.type === 'movie').length,
+        series: vis.filter(t => t.type === 'series').length,
+        unwatched: vis.filter(t => !isWatchedTitle(t)).length,
     };
     $('filters').innerHTML = filters.map(f => `<button class="chip ${currentFilter === f.key ? 'active' : ''}" data-f="${f.key}">${f.label}<span class="count">${counts[f.key]}</span></button>`).join('');
     $('filters').querySelectorAll('.chip').forEach(b => b.onclick = () => { currentFilter = b.dataset.f; render(); });
@@ -811,7 +886,7 @@ function cardHTML(t, i) {
 
 function continueHTML() {
     const items = Object.entries(progress)
-        .filter(([id, p]) => byId[id] && !p.done && p.t > 5 && p.d)
+        .filter(([id, p]) => byId[id] && !hiddenSet.has(tid(byId[id].title)) && !p.done && p.t > 5 && p.d)
         .sort((a, b) => b[1].ts - a[1].ts).slice(0, 12);
     if (!items.length) return '';
     return `<section class="section"><h3 class="section-title">Weiterschauen</h3><div class="row">${items.map(([id, p]) => {
@@ -831,14 +906,14 @@ function render() {
     $('search-clear').classList.toggle('show', q.length > 0);
     renderFilters();
 
-    let items = titles.filter(t => t.name.toLowerCase().includes(q));
+    let items = visibleTitles().filter(t => t.name.toLowerCase().includes(q));
     if (currentFilter === 'movie') items = items.filter(t => t.type === 'movie');
     if (currentFilter === 'series') items = items.filter(t => t.type === 'series');
     if (currentFilter === 'unwatched') items = items.filter(t => !isWatchedTitle(t));
     $('result-info').textContent = `${items.length} Titel`;
 
     const content = $('content');
-    if (!titles.length) {
+    if (!visibleTitles().length) {
         content.innerHTML = `<div class="empty"><div class="big">📂</div>Noch keine Filme da.<br>Zieh deine Filme in den Netzwerkordner <code>Filme</code> → Unterordner <code>Filme</code> oder <code>Serien</code>.</div>`;
         return;
     }
@@ -1116,25 +1191,126 @@ function showLock(msg, shake) {
 }
 function hideLock() { $('lock').classList.remove('show'); document.body.classList.remove('is-locked'); }
 
+let lastPw = '', openAdminAfterLogin = false;
 $('lock-form').onsubmit = e => {
     e.preventDefault();
     const pw = $('lock-pw').value.trim();
     if (!pw) return;
+    lastPw = pw;
     store.set('saydelay_key', pw);
     $('lock-btn').disabled = true; $('lock-btn').textContent = 'Prüfe…';
     start(true);
 };
-function logout() { store.set('saydelay_key', ''); showLock('Abgemeldet.'); }
+function logout() { store.set('saydelay_key', ''); store.set('saydelay_admin', ''); updateAdminButton(); showLock('Abgemeldet.'); }
+
+// Kein normales Passwort? Dann fragt die Seite den Pi, ob es das Admin-Passwort ist.
+async function tryAdminLogin(pw) {
+    try {
+        const r = await fetch(MEDIA.replace(/media\/$/, 'api/admin-login'), { method: 'POST', body: JSON.stringify({ pw }), headers: { 'Content-Type': 'text/plain' } });
+        if (r.status === 429) return 'locked';
+        if (!r.ok) return false;
+        const j = await r.json();
+        store.set('saydelay_key', j.key); store.set('saydelay_admin', j.token);
+        return true;
+    } catch (e) { return false; }
+}
+
+/* ---------- Admin-Panel ---------- */
+const isAdmin = () => !!store.get('saydelay_admin');
+let adminTab = 'movie', adminSaveTimer;
+function updateAdminButton() { const b = $('admin-btn'); if (b) b.style.display = isAdmin() ? '' : 'none'; }
+function showAdmin() {
+    if (!isAdmin()) return;
+    $('admin').classList.add('show');
+    document.body.classList.add('is-locked');
+    renderAdmin();
+}
+function closeAdmin() {
+    $('admin').classList.remove('show');
+    if (!$('profiles').classList.contains('show')) document.body.classList.remove('is-locked');
+    render();
+}
+function leaveAdmin() { store.set('saydelay_admin', ''); updateAdminButton(); closeAdmin(); toast('Admin-Modus beendet'); }
+const adminList = type => sortTitles(titles.filter(t => t.type === type));
+
+function renderAdmin() {
+    const movies = titles.filter(t => t.type === 'movie').length, series = titles.length - movies;
+    $('ad-tabs').innerHTML = [['movie', 'Filme', movies], ['series', 'Serien', series]].map(([k, l, n]) =>
+        `<button class="chip ${adminTab === k ? 'active' : ''}" data-t="${k}">${l}<span class="count">${n}</span></button>`).join('');
+    $('ad-tabs').querySelectorAll('.chip').forEach(b => b.onclick = () => { adminTab = b.dataset.t; renderAdmin(); });
+    const list = adminList(adminTab);
+    const hiddenCount = list.filter(t => hiddenSet.has(tid(t))).length;
+    $('ad-info').textContent = `${list.length} Titel · ${hiddenCount} ausgeblendet`;
+    $('ad-list').innerHTML = list.length ? list.map((t, i) => {
+        const hid = hiddenSet.has(tid(t));
+        return `<div class="ad-row ${hid ? 'is-hidden' : ''}" data-i="${i}">
+            <span class="ad-pos">${i + 1}</span>
+            <div class="ad-img">${imgTag(t.cover, t.name, 'class="loaded"')}</div>
+            <div class="ad-main"><div class="ad-title">${esc(t.name)}</div><div class="ad-sub">${hid ? 'Ausgeblendet' : 'Sichtbar'}</div></div>
+            <button class="ad-btn ad-eye ${hid ? 'off' : ''}" data-a="eye" title="${hid ? 'Einblenden' : 'Ausblenden'}">${hid
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.8 8.4 2 12 2 12s4 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'}</button>
+            <button class="ad-btn" data-a="top" title="Ganz nach oben" ${i === 0 ? 'disabled' : ''}>⇈</button>
+            <button class="ad-btn" data-a="up" title="Nach oben" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button class="ad-btn" data-a="down" title="Nach unten" ${i === list.length - 1 ? 'disabled' : ''}>↓</button>
+        </div>`;
+    }).join('') : '<div class="empty" style="padding:40px 0">Keine Titel</div>';
+    $('ad-list').querySelectorAll('.ad-row').forEach(row => {
+        const i = +row.dataset.i;
+        row.querySelectorAll('[data-a]').forEach(btn => btn.onclick = () => adminAction(btn.dataset.a, i));
+    });
+}
+
+function adminAction(action, i) {
+    const list = adminList(adminTab);
+    const t = list[i];
+    if (action === 'eye') {
+        const id = tid(t);
+        hiddenSet.has(id) ? hiddenSet.delete(id) : hiddenSet.add(id);
+    } else {
+        const j = action === 'up' ? i - 1 : action === 'down' ? i + 1 : 0;
+        if (j < 0 || j >= list.length) return;
+        list.splice(i, 1); list.splice(j, 0, t);
+        // neue Gesamt-Reihenfolge: dieser Bereich wie jetzt sortiert, der andere unverändert
+        const other = adminList(adminTab === 'movie' ? 'series' : 'movie');
+        orderList = [...list, ...other].map(tid);
+    }
+    renderAdmin();
+    clearTimeout(adminSaveTimer);
+    adminSaveTimer = setTimeout(saveAdmin, 500);
+}
+
+async function saveAdmin() {
+    try {
+        const r = await fetch(apiUrl('admin/library'), { method: 'POST', headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ token: store.get('saydelay_admin'), hidden: [...hiddenSet], order: orderList }) });
+        if (r.status === 403) { toast('Admin-Zugang abgelaufen – neu anmelden'); store.set('saydelay_admin', ''); updateAdminButton(); closeAdmin(); return; }
+        if (!r.ok) throw new Error();
+        $('ad-saved').classList.add('show'); setTimeout(() => $('ad-saved').classList.remove('show'), 1200);
+    } catch (e) { toast('Speichern fehlgeschlagen – ist der Pi erreichbar?'); }
+}
+function adminReset() { orderList = []; renderAdmin(); clearTimeout(adminSaveTimer); adminSaveTimer = setTimeout(saveAdmin, 300); }
 
 function start(fromLogin) {
     if (!MEDIA) MEDIA = piUrl() ? piUrl() + '/media/' : '';
     if (!store.get('saydelay_key')) return showLock();
     if (!fromLogin) $('content').innerHTML = '<div class="grid">' + '<div class="skel"></div>'.repeat(6) + '</div>';
     list('').then(() => { hideLock(); return Promise.all([loadLibrary(), fetchState()]); }).then(([, st]) => {
+        updateAdminButton();
         if (!profileId || !profiles.find(p => p.id === profileId)) { render(); showProfiles(); }
         else { useProfile(profileId, st); render(); }
-    }).catch(err => {
-        if (err.message === 'KEY') { store.set('saydelay_key', ''); showLock('Falsches Passwort', fromLogin); }
+        if (openAdminAfterLogin) { openAdminAfterLogin = false; showAdmin(); }
+    }).catch(async err => {
+        if (err.message === 'KEY') {
+            store.set('saydelay_key', '');
+            if (fromLogin && lastPw) {
+                const res = await tryAdminLogin(lastPw);
+                lastPw = '';
+                if (res === true) { openAdminAfterLogin = true; return start(true); }
+                if (res === 'locked') return showLock('Zu viele Versuche – warte 10 Minuten', true);
+            }
+            showLock('Falsches Passwort', fromLogin);
+        }
         else showLock('Keine Verbindung zum Pi – ist er eingeschaltet?', true);
     });
 }
