@@ -1578,13 +1578,26 @@ async function partyCall(path, data) {
 }
 
 // eigene Aktion an alle schicken
+const PARTY_LEAD = 700;   // ms Vorlauf für einen gemeinsamen Start
+// Punktgenau zum vereinbarten Zeitpunkt starten
+function partySchedule() {
+    clearTimeout(party.startTimer);
+    if (!party.st) return;
+    party.startTimer = setTimeout(() => {
+        party.startTimer = null;
+        if (party.code && partyRuns() && video.paused) { markExpected('play'); video.play().catch(() => {}); }
+    }, Math.max(0, party.st.at - serverNow()));
+}
 function partySend(extra = {}) {
     if (!party.code || (!playing && !extra.file)) return;
     party.lastLocal = Date.now();
     const intent = party.st && party.st.held ? party.st.playing : !video.paused;
-    const st = { code: party.code, playing: intent, pos: video.currentTime, ...extra };
+    // Beim Abspielen einen gemeinsamen Startpunkt kurz in der Zukunft ansagen:
+    // "in 0,7 s sind wir an Stelle X" – dieses Gerät läuft einfach weiter, alle anderen starten punktgenau dazu.
+    const lead = intent && !extra.file ? PARTY_LEAD : 0;
+    const st = { code: party.code, playing: intent, pos: video.currentTime + lead / 1000, lead, ...extra };
     // sofort lokal übernehmen, damit die Nachzieh-Logik nicht dagegen arbeitet
-    party.st = { ...(party.st || {}), ...st, at: serverNow() };
+    party.st = { ...(party.st || {}), ...st, at: serverNow() + lead };
     partyCall('update', st).then(j => { party.st = j; party.ver = j.ver; renderPartyBar(); }).catch(() => {});
 }
 
@@ -1644,10 +1657,21 @@ function partyApply(st) {
         playId(st.file, true, { fromParty: true, at: partyExpected(st), paused: !st.playing });
         return;
     }
-    const exp = partyExpected(st);
-    if (Math.abs(video.currentTime - exp) > 0.6) { markExpected('seek', exp); video.currentTime = exp; }
-    if (partyRuns(st) && video.paused) { markExpected('play'); video.play().catch(() => {}); }
-    if (!partyRuns(st) && !video.paused) { markExpected('pause'); video.pause(); }
+    const exp = partyExpected(st), off = Math.abs(video.currentTime - exp);
+    if (partyRuns(st) && st.at - serverNow() > 40) {
+        // Gemeinsamer Start liegt noch in der Zukunft: still an die Startstelle gehen und punktgenau loslaufen
+        if (!video.paused && off > 0.3) { markExpected('pause'); video.pause(); }
+        if (off > 0.05 && video.paused) { markExpected('seek', exp); video.currentTime = exp; }
+        if (video.paused) partySchedule();
+    } else if (partyRuns(st)) {
+        // Nachricht kam erst nach dem Startpunkt an: sofort loslaufen, den Rest gleicht das Tempo unmerklich aus
+        if (off > 3) { markExpected('seek', exp); video.currentTime = exp; }   // nur wenn wirklich jemand gespult hat
+        if (video.paused) { markExpected('play'); video.play().catch(() => {}); }
+    } else {
+        clearTimeout(party.startTimer); party.startTimer = null;
+        if (!video.paused) { markExpected('pause'); video.pause(); }
+        if (off > 0.15) { markExpected('seek', exp); video.currentTime = exp; }   // im Standbild angleichen – fällt nicht auf
+    }
     if (st.held && (!prev || !prev.held)) {
         const others = (st.waitingFor || []).filter(n => !party.holding || n !== partyName());
         if (others.length && Date.now() - party.waitToast > 8000) { party.waitToast = Date.now(); toast(`⏳ Warte auf ${others.join(', ')} …`); }
@@ -1666,9 +1690,16 @@ function partyDrift() {
         return;
     }
     const now = Date.now(), ahead = bufferedAhead();
-    // 1) Dieses Gerät kommt nicht hinterher -> alle kurz warten lassen
-    const stalled = video.readyState < 3 || (party.waitSince && now - party.waitSince > 700);
-    if (partyRuns() && stalled && !party.holding && !video.seeking && now - party.lastLocal > 1500) {
+    // 0) Gemeinsamer Start steht noch bevor: nur sicherstellen, dass der Start geplant ist
+    if (partyRuns() && serverNow() < party.st.at) {
+        if (video.paused && !party.startTimer) partySchedule();
+        if (video.playbackRate !== 1) video.playbackRate = 1;
+        return;
+    }
+    // 1) Dieses Gerät kommt länger nicht hinterher -> alle kurz warten lassen
+    const stalled = video.readyState < 3 || (party.waitSince && now - party.waitSince > 300);
+    if (stalled && partyRuns()) { if (!party.stallSince) party.stallSince = now; } else party.stallSince = 0;
+    if (party.stallSince && now - party.stallSince > 1200 && !party.holding && !video.seeking && now - party.lastLocal > 1500) {
         party.holding = true;
         partyCall('hold', { code: party.code, on: true }).then(j => { if (j.ver > party.ver) partyApply(j); }).catch(() => {});
     }
@@ -1680,29 +1711,32 @@ function partyDrift() {
     // 2) Während geladen oder gesprungen wird: nichts verstellen
     if (video.seeking || stalled) { if (video.playbackRate !== 1) video.playbackRate = 1; return; }
     if (now - party.lastLocal < 1500) return;
-    const exp = partyExpected(), diff = exp - video.currentTime;
+    const exp = partyExpected(), diff = exp - video.currentTime, ad = Math.abs(diff);
     if (partyRuns()) {
         if (video.paused) { markExpected('play'); video.play().catch(() => {}); }
-        party.fixes = party.fixes.filter(t => now - t < 30000);
-        const backoff = 3000 * Math.pow(2, party.fixes.length);   // je öfter gesprungen, desto länger warten
-        if (Math.abs(diff) > 1.5 && now - party.lastFix > backoff) {
-            // springen – mit eingerechneter Ladezeit, damit man danach passend landet
+        party.fixes = party.fixes.filter(t => now - t < 60000);
+        if (ad > 8 && now - party.lastFix > 5000 * Math.pow(2, party.fixes.length)) {
+            // Notfall (völlig auseinander): einmal springen
             const target = exp + (diff > 0 ? party.seekLag : 0);
             party.lastFix = now; party.fixes.push(now); party.seekStart = now;
-            markExpected('seek', target); video.currentTime = target; video.playbackRate = 1;
+            markExpected('seek', target); video.currentTime = target; video.playbackRate = 1; party.gliding = false;
+        } else {
+            // Normalfall: KEIN Sprung. Das Video läuft unmerklich schneller/langsamer, bis es wieder passt.
+            if (!party.gliding && ad > 0.04) party.gliding = true;      // erst ab 0,04 s eingreifen …
+            if (party.gliding && ad < 0.012) party.gliding = false;     // … und bis fast 0 ausgleichen
+            let rate = 1;
+            if (party.gliding) {
+                const k = Math.min(ad > 2 ? 0.15 : 0.10, Math.max(0.01, ad * 0.4));   // meist 1–8 %, höchstens 15 %
+                rate = Math.round((1 + Math.sign(diff) * k) * 100) / 100;
+            }
+            if (video.playbackRate !== rate) video.playbackRate = rate;
         }
-        else if (Math.abs(diff) > 0.08) {
-            // sanft: höchstens 6 % schneller/langsamer (fällt nicht auf)
-            const k = Math.min(0.06, Math.max(0.02, Math.abs(diff) * 0.4));
-            video.playbackRate = 1 + Math.sign(diff) * k;
-        }
-        else if (video.playbackRate !== 1) video.playbackRate = 1;
     } else {
         if (video.playbackRate !== 1) video.playbackRate = 1;
         if (!video.paused) { markExpected('pause'); video.pause(); }
-        if (Math.abs(diff) > 0.4) { markExpected('seek', exp); video.currentTime = exp; }
+        if (ad > 0.15) { markExpected('seek', exp); video.currentTime = exp; }
     }
-    if (sync && !party.st.held) sync.textContent = partyRuns() ? (Math.abs(diff) < 0.25 ? 'synchron' : `gleicht aus (${diff > 0 ? '+' : ''}${diff.toFixed(1)} s)`) : 'pausiert';
+    if (sync && !party.st.held) sync.textContent = partyRuns() ? (ad < 0.1 ? 'synchron' : `gleicht sanft aus (${diff > 0 ? '+' : ''}${diff.toFixed(1)} s)`) : 'pausiert';
 }
 
 // Auf Änderungen warten (der Pi antwortet, sobald sich etwas tut)
@@ -1761,7 +1795,7 @@ function partyBegin() {
     video.preload = 'auto';
     party.holding = false; party.fixes = []; party.lastFix = 0;
     clearInterval(party.driftTimer);
-    party.driftTimer = setInterval(partyDrift, 500);
+    party.driftTimer = setInterval(partyDrift, 250);
     partyLoop(); renderPartyBar();
 }
 function partyLeave(silent) {
@@ -1771,7 +1805,7 @@ function partyLeave(silent) {
     clearInterval(party.driftTimer);
     video.playbackRate = 1;
     partyCall('leave', { code }).catch(() => {});
-    party.holding = false; video.preload = 'metadata';
+    party.holding = false; video.preload = 'metadata'; clearTimeout(party.startTimer); party.startTimer = null; party.gliding = false;
     renderPartyBar();
     if (!silent) toast('Party verlassen');
 }
